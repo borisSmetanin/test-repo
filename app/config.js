@@ -7,14 +7,31 @@
  var envirenments = {};
 
  // Stating (default) env
- envirenments.stating = {
-    port: 3000,
+ envirenments.staging = {
+    httpPort: 3000,
+    httpsPort: 3001,
     envName: 'staging'
  };
 
 // Production env
 envirenments.production = {
-    port: 5000,
+    httpPort: 5000,
+    httpsPort: 5001,
     envName: 'production'
 };
 
+// Determand which one of ther env vars should be exported out - with -CMD argumant
+
+var currentEnvirenment = typeof(process.env.NODE_ENV) === 'string' 
+    ? process.env.NODE_ENV.toLowerCase()
+    : '';
+
+// Check if env exists in our env object -- default to stataging
+
+var envirenmentToExport = envirenments.hasOwnProperty(currentEnvirenment)
+    ? envirenments[currentEnvirenment]
+    : envirenments.staging;
+
+// Export the env module
+
+module.exports = envirenmentToExport;
