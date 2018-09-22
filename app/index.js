@@ -19,7 +19,11 @@ var url = require('url');
 var StringDecoder = require('string_decoder').StringDecoder;
 
 // Env module:
-var config = require('./config');
+var config = require('./lib/config');
+
+var handlers = require('./lib/handlers');
+
+var helpers = require('./lib/helpers');
 
 //*** Configure and run the HTTP Server **//
 
@@ -110,10 +114,11 @@ var unifiedServer = function (req,res) {
  
          var data = {
              trimmedPath: trimmedPath,
-             queryString: queryString,
-             method:method,
+             queryStringObject: queryString,
+             // TODO here???
+             method:method.toLowerCase(),
              headers: headers,
-             payload: buffer
+             payload: helpers.paresJsonToObject(buffer)
          };
  
          // route the request to handler specified in the rpouter
@@ -159,44 +164,9 @@ var unifiedServer = function (req,res) {
      });
 };
 
-// Desine the request handlers
-var handlers = {}
-
-/**
- * Whet to do when user requests to see /sample route
- * 
- * @param {JSON} data 
- * @param {function} callback 
- */
-handlers.sample = function(data, callback) {
-
-    // Callback the HTTP status code (200 OK, 412..) and a paylaod object
-    callback(406, { name: "sample handeler"});
-};
-
-/**
- * 
- * @param {JSON} data 
- * @param {function} callback
- */
-
-handlers.notFound = function(data, callback) {
-    callback(404);
-};
-
-/**
- * Simple route for ping tests
- * 
- * @param {JSON} data 
- * @param {function} callback 
- */
-handlers.ping = function(data, callback) {
-    callback(200);
-};
-
-
 // Define a request router
 var router = {
     sample: handlers.sample,
     ping: handlers.ping,
+    users: handlers.users
 };

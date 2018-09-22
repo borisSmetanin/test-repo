@@ -9,6 +9,8 @@
  // Used to normalize the path to diffrent directories
  var path = require('path');
 
+ var helpers = require('./helpers');
+
  // Create a continer for this module
  var lib = {};
 
@@ -71,7 +73,7 @@ lib.create = function (dir, fileName, data, callback) {
 
                 console.log('error', err);
                 console.log('fileDescriptor', fileDescriptor);
-                callback('Cald not create new file it may already be exist');
+                callback('Could not create new file it may already be exist');
             }
 
         }
@@ -90,8 +92,14 @@ lib.read = function(dir, fileName, callback) {
         // Reading encoding
         'utf8',
         function (err, data) {
+
             // Pass err and data params back to the callback
-            callback(err, data);
+            if ( ! err && data) {
+                var parsed_data = helpers.paresJsonToObject(data);
+                callback(false, parsed_data);
+            } else {
+                callback(err, data);
+            }
         }
 
     );
@@ -111,6 +119,11 @@ lib.update = function(dir, fileName, data, callback) {
                 var stringData = JSON.stringify(data);
                 // Truncate the file before writing on top of it
 
+                // For may app i should consider getting the data and merge existing data with new data
+                // This way i can override
+
+                // TODO i should consider implementing some sort of validatore
+                // TODO maybe use ES6 proxy?
                 fs.truncate(fileDescriptor, function(err){
                     if ( ! err) {
                         // Write to the file and close it
