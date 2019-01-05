@@ -44,5 +44,40 @@ helpers.paresJsonToObject = function (json_string) {
     }
 }
 
+/**
+ * Creates random string
+ * 
+ * @param {int} length
+ * @returns {string}
+ */
+helpers.create_random_string = function(str_length) {
+    str_length = typeof(str_length) == 'number' && str_length > 0 
+        ? str_length
+        : false;
+
+    if (str_length) {
+
+        var 
+            // Define all the possibel charecters that caould co into a string
+            possible_charecters = 'abcdefghijklmnopqrstuvwxyz1234567890',
+            // Define the final randomm strig output as empty string
+            random_str = '';
+
+        // Loop to cresate a random string
+        for (i=0; i<= str_length; i++){
+
+            // Get random charecter from the possibel string variable
+            // and append the chrecter to thr final string
+            random_str+= possible_charecters.charAt(Math.floor(Math.random() * possible_charecters.length));
+
+        }
+
+        return random_str;
+
+    } else {
+        return false;
+    }
+}
+
 // Export the module
 module.exports = helpers;

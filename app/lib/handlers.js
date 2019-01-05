@@ -343,6 +343,127 @@ handlers._users.delete = function (data, callback) {
  }
 }
 
+
+// Container for Tokens methods
+var _tokens = {};
+
+// New handlers for tokens
+// Handels all requests comming to /users
+handlers.tokens = function (data, callback) {
+    var acceptableMethods = ['post', 'get', 'put', 'delete'];
+
+    if (acceptableMethods.indexOf(data.method) > -1) {
+        handlers._tokens[data.method](data, callback);
+    } else {
+        callback(404, {
+            Error: 'Method + route are not found'
+        });
+    }
+}
+
+handlers._tokens = {};
+/**
+ * POST /tokens
+ * 
+ * Requiered data:
+ * - phone
+ * - password
+ * 
+ * Optionsl data: none
+ * 
+ * @param data {object}
+ * @param callback {function}
+ */
+handlers._tokens.post = function(data, callback) {
+
+    var phone =
+        typeof(data.payload.phone) === 'string' && data.payload.phone.trim().length === 10
+        ? data.payload.phone.trim()
+        : false;
+
+    var password =
+        typeof(data.payload.password) === 'string' && data.payload.password.trim().length > 0
+        ? data.payload.password.trim()
+        : false;
+
+        if (phone && password) {
+
+            // Lookup the user who matches the phone number
+            _data.read('users', phone, function(error, userData){
+                if ( ! error){
+
+                    // Hash the sent password and copmpare it to the existing password of the stored users
+                    if (userData.hashedPassword && helpers.hash(password) == userData.hashedPassword) {
+
+                        // Creat ne token with random name.
+                        // Set experation date one hour in the future
+
+                        var 
+                            token_id = helpers.create_random_string(20),
+                            expires = Date.now() + (1000 * 60 * 60),
+                            token_object = {
+                               phone: phone,
+                               id: token_id,
+                               expires: expires
+                            };
+
+
+                        _data.create('tokens', token_id, token_object, function(error){
+                            if ( ! error) {
+
+                                callback(200,token_object);
+                            } else {
+                                callback(500, {
+                                    Error: 'Could not creat a token'
+                                })
+                            }
+
+                        });
+
+                    } else {
+                        callback(404, {
+                            Error: 'Can not creat token - password do not match'
+                        });  
+                    }
+
+                } else {
+                    callback(404, {
+                        Error: 'User was not found'
+                    });
+                }
+            });
+
+        } else {
+            callback(400, {
+                Error: 'Must provide phone number and password for creating a token'
+            });
+        }
+
+}
+
+/**
+ * GET /tokens
+ */
+handlers._tokens.get = function(data, callback) {
+    
+}
+
+/**
+ * PUT /tokens
+ */
+handlers._tokens.put = function(data, callback) {
+    
+}
+
+/**
+ * DELETE /tokens
+ * 
+ * 
+ */
+handlers._tokens.delete = function(data, callback) {
+    
+}
+
 /**
  * 
  * @param {JSON} data 
