@@ -1,10 +1,5 @@
 //*** Loade dependencies ***//
 
-/**
- * This is it
- * @type {[type]}
- */
-
 // Servers modules
 var http = require('http');
 var https = require('https');
@@ -98,7 +93,7 @@ var unifiedServer = function (req,res) {
      });
  
      // Event triggered after buffer is done
-     // No we can handel the procced data
+     // Now we can handel the procced data
      req.on('end', function() {
          // Append the rest of whats left of the decoding action to the buffer
          buffer+= decoder.end();
@@ -115,7 +110,6 @@ var unifiedServer = function (req,res) {
          var data = {
              trimmedPath: trimmedPath,
              queryStringObject: queryString,
-             // TODO here???
              method:method.toLowerCase(),
              headers: headers,
              payload: helpers.paresJsonToObject(buffer)

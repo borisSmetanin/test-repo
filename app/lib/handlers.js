@@ -16,7 +16,6 @@ var handlers = {}
 handlers.users = function (data, callback) {
     var acceptableMethods = ['post', 'get', 'put', 'delete'];
 
-    console.log('data.method', data.method);
     if (acceptableMethods.indexOf(data.method) > -1) {
         handlers._users[data.method](data, callback);
     } else {
@@ -28,11 +27,6 @@ handlers.users = function (data, callback) {
 
 // Container for usrs sub-methods
 handlers._users = {};
-
-// POST /users
-// Requierd data:
-// * first name
-//
 
 /**
  * POST /users
@@ -51,8 +45,8 @@ handlers._users = {};
  * @param {function} callback 
  */
 handlers._users.post = function (data, callback) {
+    
     // Check all requierd field are filled out
-
     var firstName =
         typeof(data.payload.firstName) === 'string' && data.payload.firstName.trim().length > 0
         ? data.payload.firstName.trim()
@@ -73,10 +67,7 @@ handlers._users.post = function (data, callback) {
         ? data.payload.password.trim()
         : false;
 
-    var tosAgreement =
-        typeof(data.payload.tosAgreement) === 'boolean' && data.payload.tosAgreement == true
-        ? true
-        : false;
+    var tosAgreement = typeof(data.payload.tosAgreement) === 'boolean' && data.payload.tosAgreement == true;
 
     if (firstName && lastName && phone && password && tosAgreement ) {
         // Make sure that the user does not already exists
@@ -170,7 +161,7 @@ handlers._users.get = function (data, callback) {
         // TODO - im my app i will call it user and not data. data is generic and not clear
         _data.read('users', phone, function (err, data){
 
-            if ( ! err) {
+            if ( ! err && data) {
                 // Remove the hashed password from the user object before return it to the caller
                 delete data.hashedPassword;
 
@@ -232,7 +223,7 @@ handlers._users.put = function (data, callback) {
     
     if (phone) {
 
-        // COntinue only if phone is valid
+        // Continue only if phone is valid
 
         if (firstName || lastName || password) {
 
@@ -303,7 +294,7 @@ handlers._users.put = function (data, callback) {
  * @param {function} callback 
  * 
  * @TODO let only authenticated users accsess to thier own data and nobody elses data
- * @TODO clean up any other files that might be related to this users
+ * @TODO clean up (delete) any other files that might be related to this users
  * 
  */
 handlers._users.delete = function (data, callback) {
