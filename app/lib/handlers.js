@@ -140,7 +140,6 @@ handlers._users.post = function (data, callback) {
  * 
  * Optionl data: none
  * 
- * @TODO let only authenticated users accsess to thier own data
  * @TODO in my homework - i should build get_collection and get. phone number should be passed in the GET /users/<phone_number>
  *  
  * @param {JSON} data 
@@ -157,18 +156,33 @@ handlers._users.get = function (data, callback) {
 
     if (phone) {
 
-        // Get the user
-        // TODO - im my app i will call it user and not data. data is generic and not clear
-        _data.read('users', phone, function (err, data){
+        // Get the token from the header
 
-            if ( ! err && data) {
-                // Remove the hashed password from the user object before return it to the caller
-                delete data.hashedPassword;
+        var token = typeof data.headers.token == 'string' 
+            ? data.headers.token 
+            : false;
 
-                callback(200, data);
+        // Validate that given token from the headers is valid for the phone number
+        handlers._tokens.verify_token(token, phone, function(is_valid_token){
+
+            if (is_valid_token) {
+                // Get the user
+                _data.read('users', phone, function (err, user){
+
+                    if ( ! err && user) {
+                        // Remove the hashed password from the user object before return it to the caller
+                        delete user.hashedPassword;
+
+                        callback(200, user);
+                    } else {
+                        callback(404, {
+                            Error: 'User was not found'
+                        });
+                    }
+                });
             } else {
-                callback(404, {
-                    Error: 'User was not found'
+                callback(403, {
+                    Error: "Invalid token was supplied - either missing or invalid"
                 });
             }
         });
@@ -223,49 +237,67 @@ handlers._users.put = function (data, callback) {
     
     if (phone) {
 
+
+
         // Continue only if phone is valid
 
         if (firstName || lastName || password) {
 
-            // Get the user - check if user exists before we updste him
-            _data.read('users', phone, function(err, userData){
-                if ( ! err && userData) {
+             // Get the token from the header
 
-                    // Update the necessary fields
-                    // @TODO i shouod do this part with a loop
+            var token = typeof data.headers.token == 'string' 
+            ? data.headers.token 
+            : false;
 
-                    if (firstName) {
-                        userData.firstName = firstName;
-                    }
+            // Validate that given token from the headers is valid for the phone number
+            handlers._tokens.verify_token(token, phone, function(is_valid_token){
 
-                    if (lastName) {
-                        userData.lastName = lastName;
-                    }
-
-                    if (password) {
-                        userData.hashedPassword = helpers.hash(password);
-                    }
-
-
-                    // Store the new update
-                    _data.update('users', phone, userData, function(err){
-                        if ( ! err) {
-                            callback(200, {
-                                Sucsess: 'User was sucssefully updated'
+                if (is_valid_token) {
+                    // Get the user - check if user exists before we updste him
+                    _data.read('users', phone, function(err, userData){
+                        if ( ! err && userData) {
+    
+                            // Update the necessary fields
+                            // @TODO i shouod do this part with a loop
+    
+                            if (firstName) {
+                                userData.firstName = firstName;
+                            }
+    
+                            if (lastName) {
+                                userData.lastName = lastName;
+                            }
+    
+                            if (password) {
+                                userData.hashedPassword = helpers.hash(password);
+                            }
+    
+                            // Store the new update
+                            _data.update('users', phone, userData, function(err){
+                                if ( ! err) {
+                                    callback(200, {
+                                        Sucsess: 'User was sucssefully updated'
+                                    });
+                                } else {
+                                    console.log(err)
+                                    callback(500, {
+                                        Error: 'Could not update the user'
+                                    });
+                                }
                             });
+    
                         } else {
-                            console.log(err)
-                            callback(500, {
-                                Error: 'Could not update the user'
+                            callback(404, {
+                                Error: 'User was not found' 
                             });
                         }
                     });
-
                 } else {
-                    callback(404, {
-                        Error: 'User was not found' 
+                    callback(403, {
+                        Error: "Invalid token was supplied - either missing or invalid"
                     });
                 }
+
             });
            
         } else {
@@ -293,7 +325,6 @@ handlers._users.put = function (data, callback) {
  * @param {object} data 
  * @param {function} callback 
  * 
- * @TODO let only authenticated users accsess to thier own data and nobody elses data
  * @TODO clean up (delete) any other files that might be related to this users
  * 
  */
@@ -308,33 +339,47 @@ handlers._users.delete = function (data, callback) {
 
  if (phone) {
 
-     // Get the user
-     // TODO - im my app i will call it user and not data. data is generic and not clear
-     _data.read('users', phone, function (err, userData){
+    
+    var token = typeof data.headers.token == 'string' 
+    ? data.headers.token 
+    : false;
 
-         if ( ! err) {
-             _data.delete('users', phone, function(err) {
+    // Validate that given token from the headers is valid for the phone number
+    handlers._tokens.verify_token(token, phone, function(is_valid_token){
+        if (is_valid_token) {
+            // Get the user
+            // TODO - im my app i will call it user and not data. data is generic and not clear
+           _data.read('users', phone, function (err, userData){
+        
                 if ( ! err) {
-
-                    callback(200, {
-                        Success: 'User was deleted successfully'
+                    _data.delete('users', phone, function(err) {
+                       if ( ! err) {
+        
+                           callback(200, {
+                               Success: 'User was deleted successfully'
+                           });
+        
+                       } else {
+                           
+                           console.log(err)
+                           callback(500, {
+                               Error: 'Could not delete the user'
+                           });
+                       }
                     });
-
+                  
                 } else {
-                    
-                    console.log(err)
-                    callback(500, {
-                        Error: 'Could not delete the user'
+                    callback(404, {
+                        Error: 'User was not found'
                     });
                 }
-             });
-           
-         } else {
-             callback(404, {
-                 Error: 'User was not found'
-             });
-         }
-     });
+           });
+        } else {
+            callback(403, {
+                Error: "Invalid token was supplied - either missing or invalid"
+            });
+        }
+    });
 
  } else {
      callback(400, {
@@ -443,25 +488,194 @@ handlers._tokens.post = function(data, callback) {
 
 /**
  * GET /tokens
+ * 
+ * Requiered data:
+ * - id
+ * 
+ * Optionsl data: none
+ * 
  */
 handlers._tokens.get = function(data, callback) {
-    
+    // Check token id is valid
+    var token_id = 
+    typeof data.queryStringObject.id == 'string' && 
+    // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+    data.queryStringObject.id.trim().length === 20
+        ? data.queryStringObject.id.trim()
+        : false;
+
+    if (token_id) {
+
+        // Get the token
+        _data.read('tokens', token_id, function (err, token_data){
+
+            if ( ! err && token_data) {
+              
+                callback(200, token_data);
+            } else {
+                callback(404, {
+                    Error: 'Token was not found'
+                });
+            }
+        });
+
+    } else {
+        callback(400, {
+            Error: 'Pleas provide a token id'
+        });
+    }
+
 }
 
 /**
  * PUT /tokens
+ * 
+ * Requiered data:
+ * - id
+ * - extend
+ * 
+ *  Optionsl data: none
  */
 handlers._tokens.put = function(data, callback) {
     
+    // Get the token id
+
+     // Check token id is valid
+     var token_id = 
+        typeof data.payload.id == 'string' && 
+        // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+        data.payload.id.trim().length === 20
+            ? data.payload.id.trim()
+            : false;
+
+    // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+    var extend = 
+        typeof data.payload.extend == 'boolean' && 
+        data.payload.extend
+
+    if (token_id && extend) {
+
+        _data.read('tokens', token_id, function (err, token_data){
+
+            if ( ! err && token_data) {
+              
+                // Check if token was not expired
+                if (Date.now() < token_data.expires) {
+                    // Extend the token for 1 hour and update this token
+                    token_data.expires = Date.now() + (1000 * 60 * 60);
+                    
+                    // Update this token
+                    _data.update('tokens', token_id, token_data, function(err){
+                        if ( ! err){
+    
+                            callback(200);
+                        } else {
+                            callback(500, {
+                                Error: 'Internal error while updating token'
+                            });
+                        }
+                    });
+                } else { 
+
+                    callback(405, {
+                        Error: 'Token was expired, pleas creat a new one'
+                    });
+                }
+
+
+                
+            } else {
+                callback(404, {
+                    Error: 'Token was not found'
+                });
+            }
+        })
+
+    } else {
+        callback(400, {
+            Error: 'Invalid extend request was provided'
+        });
+    }
+           
+
+    // extend the token for anothger 1 hour
+    // TODO feels like extend= true is redundent
 }
 
 /**
  * DELETE /tokens
  * 
+ * Requiered data:
+ * - id
  * 
  */
 handlers._tokens.delete = function(data, callback) {
-    
+     // Check token id is valid
+     var token_id = 
+        typeof data.payload.id == 'string' && 
+        // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+        data.payload.id.trim().length === 20
+            ? data.payload.id.trim()
+            : false;
+
+    if (token_id) {
+
+        _data.read('tokens', token_id, function(err, token_data){
+            if ( ! err) {
+                _data.delete('tokens', token_id, function(err){
+                    if ( ! err) {
+                        callback(200, {
+                            Sucsess: "token was sucsessfully deleted"
+                        })
+                    } else {
+                        callback(500, {
+                            Error: 'Internal error while deleting a token'
+                        });
+                    }
+                });
+            } else { 
+                callback(404, {
+                    Error: 'Token was not found'
+                });
+            }
+        });
+
+    } else {
+        callback(405, {
+            Error: 'Invalid token ID was provided'
+        });
+    }
+}
+
+
+/**
+ * Verify users token is valid
+ * 
+ * @param {string}   token_id
+ * @param {string}   user_phone
+ * @param {function} callback
+ * 
+ */
+handlers._tokens.verify_token = function(token_id, user_phone, callback) {
+
+    // Lookup the token
+
+    _data.read('tokens', token_id, function(err, token_data){
+
+        if ( ! err) {
+
+            // Check up that the token is for the given user && that token is not expired
+            if (token_data.phone === user_phone && Date.now() < token_data.expires) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        } else {
+            callback(false); 
+        }
+    });
+
+
 }
 
 /**

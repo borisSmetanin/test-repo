@@ -64,7 +64,7 @@ helpers.create_random_string = function(str_length) {
             random_str = '';
 
         // Loop to cresate a random string
-        for (i=0; i<= str_length; i++){
+        for (i=0; i < str_length; i++){
 
             // Get random charecter from the possibel string variable
             // and append the chrecter to thr final string
