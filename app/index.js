@@ -163,5 +163,6 @@ var router = {
     sample: handlers.sample,
     ping: handlers.ping,
     users: handlers.users,
-    tokens: handlers.tokens
+    tokens: handlers.tokens,
+    checks: handlers.checks
 };

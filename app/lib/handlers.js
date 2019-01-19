@@ -6,7 +6,7 @@
 
  var _data = require('./data');
  var helpers = require('./helpers');
-//  var config = require('./config');
+var config = require('./config');
 
 // Define the request handlers
 var handlers = {}
@@ -325,67 +325,102 @@ handlers._users.put = function (data, callback) {
  * @param {object} data 
  * @param {function} callback 
  * 
- * @TODO clean up (delete) any other files that might be related to this users
- * 
  */
 handlers._users.delete = function (data, callback) {
      // Check that the phone number is valid
 
-     var phone = 
-     typeof data.queryStringObject.phone == 'string' && 
-     data.queryStringObject.phone.trim().length === 10
-         ? data.queryStringObject.phone.trim()
-         : false;
+    var phone = 
+    typeof data.queryStringObject.phone == 'string' && 
+    data.queryStringObject.phone.trim().length === 10
+        ? data.queryStringObject.phone.trim()
+        : false;
 
- if (phone) {
+    if (phone) {
 
-    
-    var token = typeof data.headers.token == 'string' 
-    ? data.headers.token 
-    : false;
+        
+        var token = typeof data.headers.token == 'string' 
+        ? data.headers.token 
+        : false;
 
-    // Validate that given token from the headers is valid for the phone number
-    handlers._tokens.verify_token(token, phone, function(is_valid_token){
-        if (is_valid_token) {
-            // Get the user
-            // TODO - im my app i will call it user and not data. data is generic and not clear
-           _data.read('users', phone, function (err, userData){
-        
-                if ( ! err) {
-                    _data.delete('users', phone, function(err) {
-                       if ( ! err) {
-        
-                           callback(200, {
-                               Success: 'User was deleted successfully'
-                           });
-        
-                       } else {
-                           
-                           console.log(err)
-                           callback(500, {
-                               Error: 'Could not delete the user'
-                           });
-                       }
-                    });
-                  
-                } else {
-                    callback(404, {
-                        Error: 'User was not found'
-                    });
-                }
-           });
-        } else {
-            callback(403, {
-                Error: "Invalid token was supplied - either missing or invalid"
+        // Validate that given token from the headers is valid for the phone number
+        handlers._tokens.verify_token(token, phone, function(is_valid_token){
+            if (is_valid_token) {
+                // Get the user
+                // TODO - im my app i will call it user and not data. data is generic and not clear
+            _data.read('users', phone, function (err, user_data){
+            
+                    if ( ! err) {
+                        _data.delete('users', phone, function(err) {
+                        if ( ! err) {
+            
+                            // Delete each of the checks assoiative to the user
+                            var user_checks = typeof(user_data.checks) == 'object' && user_data.checks instanceof Array
+                                ?  user_data.checks
+                                : [];
+                            
+                            if (user_checks.length > 0) {
+
+                                var deleted_checks  = 0,
+                                    deletion_errors = false;
+
+                                // Loopp throght the checks and delete them
+                                user_checks.forEach(function(check_id){
+                                    _data.delete('checks', check_id, function(err) {
+                                        if (err) {
+                                            deletion_errors = true;
+                                        }
+
+                                        deleted_checks ++;
+                                        // Loop has ended 
+                                        if (deleted_checks == user_checks.length) {
+
+                                            // No error detected - A-OK
+                                            if ( ! deletion_errors) {
+                                                callback(200, {
+                                                    Success: 'User was deleted successfully (with all of its checks)'
+                                                });
+                                            } else {
+                                                callback(500,  {
+                                                    Error: 'Some of the user\'s checks were not deleted'
+                                                });
+                                            }
+                                        }   
+                                    });
+                                });    
+                            } else {
+                                // Noo need to delete the users checks
+                                callback(200, {
+                                    Success: 'User was deleted successfully'
+                                });
+                            }
+            
+                        } else {
+                            
+                            console.log(err)
+                            callback(500, {
+                                Error: 'Could not delete the user'
+                            });
+                        }
+                        });
+                    
+                    } else {
+                        callback(404, {
+                            Error: 'User was not found'
+                        });
+                    }
             });
-        }
-    });
+            } else {
+                callback(403, {
+                    Error: "Invalid token was supplied - either missing or invalid"
+                });
+            }
+        });
 
- } else {
-     callback(400, {
-         Error: 'Pleas provide a vaid phone number'
-     });
- }
+    } else {
+        callback(400, {
+            Error: 'Pleas provide a vaid phone number'
+        });
+    }
 }
 
 
@@ -678,6 +713,463 @@ handlers._tokens.verify_token = function(token_id, user_phone, callback) {
 
 }
 
+/*********************** Checks Service ******************************/
+// Container for Checks handler
+handlers._checks = {};
+
+
+// New handlers for tokens
+// Handels all requests comming to /checks
+handlers.checks = function (data, callback) {
+    var acceptableMethods = [ 'post', 'get', 'put', 'delete' ];
+
+    if (acceptableMethods.indexOf(data.method) > -1) {
+        handlers._checks[data.method](data, callback);
+    } else {
+        callback(404, {
+            Error: 'Method + route are not found'
+        });
+    }
+}
+
+/**
+ * @TODO need to understand what the hell this thing is for 
+ * @TODO i think this is for background workers of some kind
+ * 
+ *  POST /checks
+ * 
+ * Requiered data:
+ * - protocol
+ * - url
+ * - method
+ * - successCode (array)
+ * - timeoutSeconds
+ * 
+ * Optional data: none
+ * 
+ */
+handlers._checks.post = function(data, callback) {
+
+    // Validate inputs
+    var allowed_protocols =  [ 'http', 'https' ],
+        protocol =
+            typeof(data.payload.protocol) === 'string' && allowed_protocols.indexOf(data.payload.protocol) > -1
+                ? data.payload.protocol
+                : false;
+
+    var url =
+        typeof(data.payload.url) === 'string' && data.payload.url.trim().length > 0
+            ? data.payload.url.trim()
+            : false;
+
+    var allowed_methods = [ 'post', 'put', 'get', 'delete' ],
+        method =
+            typeof(data.payload.method) === 'string' && allowed_methods.indexOf(data.payload.method) > -1
+                ? data.payload.method
+                : false;
+    
+    var successCodes =
+            typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0
+                ? data.payload.successCodes
+                : false;
+
+    var timeoutSeconds =
+            typeof(data.payload.timeoutSeconds) === 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5
+                ? data.payload.timeoutSeconds
+                : false;
+    
+    if (protocol && url && method && successCodes && timeoutSeconds) {
+
+        // Get the token from the headers
+        var token = typeof data.headers.token == 'string' 
+            ? data.headers.token 
+            : false;
+        
+        // Lookup the user by reading the token
+
+        _data.read('tokens', token, function name(err, token_data) {
+            
+            if ( ! err && token_data) {
+
+                var user_phone = token_data.phone;
+
+                // Lookup the user
+                _data.read('users', user_phone, function(err, user_data){
+
+                    if ( ! err && user_data) {
+
+                        // Get existing users chekcs
+                        var user_checks = typeof(user_data.checks) == 'object' && user_data.checks instanceof Array
+                            ?  user_data.checks
+                            : [];
+
+                        // Validate that user has less then the max allowed number of checks per user
+                        if (user_checks.length < config.maxChecks) {
+
+                            // Create a random id for the check
+                            var check_id = helpers.create_random_string(20);
+
+                            // Creat the check opbject and include the users phone
+                            var check_object = {
+                                id : check_id,
+                                user_phone: user_phone,
+                                protocol: protocol,
+                                url: url,
+                                method: method,
+                                successCodes: successCodes,
+                                timeoutSeconds: timeoutSeconds
+                            }
+
+                            // Save the check object in the checks collection
+                            _data.create('checks', check_id, check_object, function(err){
+
+                                if ( ! err) {
+
+                                    // Add the check id to the user's data
+                                    user_checks.push(check_id);
+                                    user_data.checks = user_checks;
+
+                                    // Update the user
+                                    _data.update('users', user_phone, user_data, function(err){
+                                        if ( ! err) {
+                                            callback(200, {
+                                                Sucsses: 'Check was created sucssesfully',
+                                                sucsses_payload: check_object
+                                            });
+                                        } else {
+                                            callback(500, {
+                                                Error: 'Could not update the user with the new check'
+                                            });
+                                        }
+                                    });
+                                    
+
+                                } else {
+
+                                    callback(500, {
+                                        Error: 'Error while creating the check object'
+                                    });
+                                }
+                            });
+
+                            // user_checks.push({
+
+                            // });
+                        } else {
+                            callback(404, {
+                                Error: 'You have suprpassed the max allowed checks: ' + config.maxChecks
+                            });
+                        }
+
+                        // Now we need to add the user checks to the user data
+
+                    } else {
+                        callback(403, {
+                            Error: 'User was not found with this token'
+                        }) 
+                    }
+                });
+            } else {
+
+                callback(403, {
+                    Error: 'Not authorised token was provided'
+                });
+            }
+        });
+
+    } else {
+        callback(400, {
+            Error: 'Failed to validate check creation - missing requierd inpouts or inpouts are invalid'
+        });
+    }
+
+}
+
+/**
+ * GET /checks
+ * Requierd data
+ * - id
+ * 
+ * Optional data: none
+ */
+handlers._checks.get = function(data, callback) {
+
+    var check_id = 
+        typeof data.queryStringObject.id == 'string' && data.queryStringObject.id.trim().length == 20
+            ? data.queryStringObject.id.trim()
+            : false;
+
+    if (check_id) {
+
+        // Lookup the check (for token validation)
+        _data.read('checks', check_id, function(err, check_data){
+
+            if ( ! err) {
+                // Get the token from the header
+                var token = typeof data.headers.token == 'string' 
+                    ? data.headers.token.trim() 
+                    : false;
+        
+                // Validate that given token from the headers is valid for the id
+                handlers._tokens.verify_token(token, check_data.user_phone, function(is_valid_token){
+        
+                    if (is_valid_token) {
+                        // Get the check
+                       callback(200,check_data);
+                    } else {
+                        callback(403, {
+                            Error: "Invalid token was supplied - either missing or invalid"
+                        });
+                    }
+                });
+            } else {
+                callback(404, {
+                    Error: 'Check was not found'
+                });
+            }
+        });
+    } else {
+        callback(400, {
+            Error: 'Pleas provide a vaid check id'
+        });
+    }
+}
+
+/**
+ * PUT /checks
+ * Requiered data:
+ * - id
+ * 
+ * Optional data:
+ * - protocol
+ * - url
+ * - method
+ * - successCode (array)
+ * - timeoutSeconds
+ * 
+ * Optional data: none
+ */
+handlers._checks.put = function(data, callback) {
+    // Check for the require fields
+    var id = 
+        typeof data.payload.id == 'string' && 
+        data.payload.id.trim().length === 20
+            ? data.payload.id.trim()
+            : false;
+
+                // Validate inputs
+    var allowed_protocols =  [ 'http', 'https' ],
+        protocol = typeof(data.payload.protocol) === 'string' && allowed_protocols.indexOf(data.payload.protocol) > -1
+            ? data.payload.protocol
+            : false;
+
+    var url =
+        typeof(data.payload.url) === 'string' && data.payload.url.trim().length > 0
+            ? data.payload.url.trim()
+            : false;
+
+    var allowed_methods = [ 'post', 'put', 'get', 'delete' ],
+        method =
+            typeof(data.payload.method) === 'string' && allowed_methods.indexOf(data.payload.method) > -1
+                ? data.payload.method
+                : false;
+
+    var successCodes =
+            typeof(data.payload.successCodes) === 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0
+                ? data.payload.successCodes
+                : false;
+
+    var timeoutSeconds =
+            typeof(data.payload.timeoutSeconds) === 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5
+                ? data.payload.timeoutSeconds
+                : false;
+
+    // Validate id
+    if (id) {
+
+        // Validate requierd fields were provided
+        if (protocol || url || method || successCodes || timeoutSeconds) {
+
+            _data.read('checks', id, function(err, check_data){
+
+                if ( ! err && check_data) {
+
+                    var token = typeof data.headers.token == 'string' 
+                        ? data.headers.token.trim() 
+                        : false;
+        
+                    // Validate that given token from the headers is valid for the id
+                    handlers._tokens.verify_token(token, check_data.user_phone, function(is_valid_token){
+            
+                        // Update the check if token is valid
+                        if (is_valid_token) {
+                            
+                            if (protocol) {
+                                check_data.protocol = protocol;
+                            }
+
+                            if (url) {
+                                check_data.url = url;
+                            }
+
+                            if (method) {
+                                check_data.method = method;
+                            }
+
+                            if (successCodes) {
+                                check_data.successCodes = successCodes;
+                            }
+
+                            if (timeoutSeconds) {
+                                check_data.timeoutSeconds = timeoutSeconds;
+                            }
+
+                            _data.update('checks', id, check_data, function(err){
+
+                                if ( ! err) {
+
+                                    callback(200, {
+                                        Sucsses: 'Check was updated sucssefully!'
+                                    });
+                                } else {
+                                    callback(500, {
+                                        Error: 'Internal error while updating the token'
+                                    })
+                                }
+
+                            });
+                        } else {
+                            callback(403, {
+                                Error: "Invalid token was supplied - either missing or invalid"
+                            });
+                        }
+                    });
+
+                } else { 
+                    callback(404, {
+                        Error: 'Check was not found'
+                    });
+                }
+            });
+        } else{
+            callback(400, {
+                Error: 'You did not provuide any data for check update'
+            });
+        }
+    } else {
+
+        callback(400, {
+            Error: 'Invalid or missing check id was provided'
+        });
+    }
+
+}
+
+/**
+ * DELETE /checks
+ * 
+ * Requiered data:
+ * - id
+ * 
+ * Optional data: none
+ * 
+ */
+handlers._checks.delete = function(data, callback) {
+
+     // Check that the phone number is valid
+     var id = 
+        typeof data.queryStringObject.id == 'string' && 
+         data.queryStringObject.id.trim().length === 20
+            ? data.queryStringObject.id.trim()
+            : false;
+
+    if (id) {
+        // Load the check
+        _data.read('checks', id, function(err, check_data){
+            if ( ! err) {
+                var token = typeof data.headers.token == 'string' 
+                    ? data.headers.token 
+                    : false;
+                // Validate that given token from the headers is valid for the phone number
+                handlers._tokens.verify_token(token, check_data.user_phone, function(is_valid_token){
+                    if (is_valid_token) {
+                        // Get the user
+                        
+                       // Delete the check
+                        _data.delete('checks', id, function(err) {
+                            if ( ! err) {
+                                
+                                _data.read('users', check_data.user_phone, function(err, user_data){
+
+                                    if ( ! err && user_data) {
+
+                                         // Get existing users chekcs
+                                        var user_checks = typeof(user_data.checks) == 'object' && user_data.checks instanceof Array
+                                                ?  user_data.checks
+                                                : [],
+                                            check_position = user_checks.indexOf(id);
+
+                                        // Delete the check if exists 
+                                        if (check_position > -1) {
+
+                                            // update the user checks
+                                            user_checks.splice(check_position);
+                                            user_data.checks = user_checks;
+                                            _data.update('users', user_data.phone, user_data, function(err){
+                                                if ( ! err) {
+                                                    callback(200, {
+                                                        Success: 'Cehck was removed successfully!'
+
+                                                    });
+                                                } else {
+                                                    // This scenario should not happen
+                                                    callback(500, {
+                                                        Error: 'Could not update the user after check was removed'
+                                                    });
+                                                }
+                                            });
+                                        } else {
+                                            // This scenario should not happen
+                                            callback(500, {
+                                                Error: 'User check was not found in the user data'
+                                            });
+                                        }
+                                    } else {
+                                        callback(500, {
+                                            Error: 'Check was not removed fropm user - Could not find the user'
+                                        }); 
+                                    }
+
+                                });
+
+                            } else {
+                                callback(500, {
+                                    Error: 'Could not delete the check'
+                                });
+                            }
+                        });
+                    } else {
+                        callback(403, {
+                            Error: "Invalid token was supplied - either missing or invalid"
+                        });
+                    }
+                });
+            } else {
+                callback(404, {
+                    Error: 'Check was not found'
+                });
+            }
+        });
+
+    } else {
+        callback(400, {
+            Error: 'Pleas provide a vaid check id'
+        });
+    }
+}
+
+
+/*********************** Additional Services ******************************/
 /**
  * 
  * @param {JSON} data 
@@ -685,7 +1177,7 @@ handlers._tokens.verify_token = function(token_id, user_phone, callback) {
  */
 
 handlers.notFound = function(data, callback) {
-    callback(404);
+    callback(404, {Error: "Route was not found in this app"});
 };
 
 /**
