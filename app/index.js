@@ -20,6 +20,12 @@ var handlers = require('./lib/handlers');
 
 var helpers = require('./lib/helpers');
 
+// @TODO get rid of thisd shit
+
+helpers.send_twilio_sms('+972545884629', 'hello!!!', function(error){
+    console.info('index send_twilio_sms error', error);
+});
+
 //*** Configure and run the HTTP Server **//
 
 

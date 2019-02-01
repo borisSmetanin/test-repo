@@ -4,7 +4,7 @@
 
  // Container for all envirenments
 
- var envirenments = {};
+ var envirenments = {}
 
  // Stating (default) env
  envirenments.staging = {
@@ -12,7 +12,6 @@
     httpsPort: 3001,
     envName: 'staging',
     hashingSecret: 'thisIsASecret',
-    maxChecks: 5
  };
 
 // Production env
@@ -21,8 +20,9 @@ envirenments.production = {
     httpsPort: 5001,
     envName: 'production',
     hashingSecret: 'thisIsASecret',
-    maxChecks: 5
 };
+
+
 
 // Determand which one of ther env vars should be exported out - with -CMD argumant
 
@@ -35,6 +35,13 @@ var currentEnvirenment = typeof(process.env.NODE_ENV) === 'string'
 var envirenmentToExport = envirenments.hasOwnProperty(currentEnvirenment)
     ? envirenments[currentEnvirenment]
     : envirenments.staging;
+
+envirenmentToExport.maxChecks = 5;
+envirenmentToExport.twilio = {
+    from_phone: '+15005550006',
+    accountsSid: 'ACb32d411ad7fe886aac54c665d25e5c5d',
+    authToken: '9455e3eb3109edc12e3d8c92768f7a67'
+};
 
 // Export the env module
 
