@@ -173,6 +173,26 @@ lib.delete = function(dir, fileName, callback) {
     });
 }
 
+// List all items in a directory
+lib.list = function(dir, callback) {
+
+    fs.readdir(lib.baseDir + dir + '/', function(err,files_data){
+        if ( ! err && files_data && files_data.length > 0) {
+
+            var trimmed_file_names = [];
+            files_data.forEach(function(file_name){
+                // Push trimmed file name to the file names array
+                trimmed_file_names.push(file_name.replace('.json', ''));
+            });
+
+            // Callback the array
+            callback(false,trimmed_file_names);
+        } else {
+            callback(err,files_data);
+        }
+    });
+}
+
 // Export the module
  module.exports = lib;
 
