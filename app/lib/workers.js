@@ -271,12 +271,15 @@ workers.proces_check_outcome = function(original_check_data, check_outcome) {
 
             // In case alert needs to be send to the user - pass the new check data to the next worker
             if (alert_warranted) {
-
-
                 workers.alert_users_to_status_change(new_check_data);
-
             } else {
+                var 
+                    method         = new_check_data.method.toUpperCase(),
+                    full_url       = new_check_data.protocol + '://' + new_check_data.url,
+                    message        = `${method} ${full_url} is ${state} as excpected`;
+                // Log to console
                 console.log('Check outcome has not changed, alert is not needed');
+                console.log('Check message:', message);
             }
 
         } else {
