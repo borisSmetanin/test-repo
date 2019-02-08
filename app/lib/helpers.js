@@ -95,7 +95,7 @@ helpers.send_twilio_sms = function(phone, message, callabck) {
 
     // @TODO he uses 10 which makes no sence in here right?
     phone = typeof(phone) == 'string' && phone.trim().length > 0 
-        ? phone 
+        ? '+' + phone 
         : false;
     
     var message_length = message.trim().length;

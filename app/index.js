@@ -9,17 +9,9 @@ var app = {};
 // This function will initialize the server and workers
 app.init = function() {
     // Start the server
-    //server.init();
-//     var url = require('url');
-//    var test = url.parse('http' + '://' + 'www.facebook.com/asasd/asdasc', true);
-
-//    console.info('test');
-//    console.info(test);
-    //workers.gather_all_checks();
-
+    server.init();
     // Start the workrs
-    //workers.init();
-
+   workers.init();
 }
 
 // Start the App by executing the function

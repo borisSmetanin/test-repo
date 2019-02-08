@@ -58,7 +58,7 @@ handlers._users.post = function (data, callback) {
         : false;
 
     var phone =
-        typeof(data.payload.phone) === 'string' && data.payload.phone.trim().length === 10
+        typeof(data.payload.phone) === 'string' && data.payload.phone.trim().length === 12
         ? data.payload.phone.trim()
         : false;
 
@@ -214,7 +214,7 @@ handlers._users.put = function (data, callback) {
     // Check for the require fields
     var phone = 
         typeof data.payload.phone == 'string' && 
-        data.payload.phone.trim().length === 10
+        data.payload.phone.trim().length === 12
             ? data.payload.phone.trim()
             : false;
 
@@ -457,7 +457,7 @@ handlers._tokens = {};
 handlers._tokens.post = function(data, callback) {
 
     var phone =
-        typeof(data.payload.phone) === 'string' && data.payload.phone.trim().length === 10
+        typeof(data.payload.phone) === 'string' && data.payload.phone.trim().length === 12
         ? data.payload.phone.trim()
         : false;
 

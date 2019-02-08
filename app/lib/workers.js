@@ -25,12 +25,11 @@ var
  var workers = {};
 
 // Timer to execute the worker process once per minute
-
 workers.loop = function() {
     // Is been executed once per minute
     setInterval(function(){
         workers.gather_all_checks();
-    }, 1000 * 60);
+    }, 1000 * 5);
 }
 
 /**
@@ -83,8 +82,10 @@ workers.validate_check_data = function(original_check_data) {
             ? original_check_data.id.trim()
             : false;
 
+    var original_phone = original_check_data.user_phone;
+
     original_check_data.user_phone = 
-        typeof(original_check_data.user_phone) == 'string' && original_check_data.user_phone.trim().length == 10
+        typeof(original_check_data.user_phone) == 'string' && original_check_data.user_phone.trim().length == 12
             ? original_check_data.user_phone.trim()
             : false;
     
@@ -150,6 +151,8 @@ workers.validate_check_data = function(original_check_data) {
     } else {
         console.info('Check data is not valid');
         console.info('original_check_data', original_check_data);
+        console.info('original_check_data.user_phone.trim().length', original_phone.length);
+        console.info('original_check_data.user_phone', original_phone);
     }
 }
 
@@ -173,7 +176,7 @@ workers.preform_check = function(original_check_data) {
 
     // Construct the request
     var request_details = {
-        // @TODO - sims like i can use parsed_url.protocol which comes prepared with this sofix
+        // @TODO - seems like i can use parsed_url.protocol which comes prepared with this sofix
         protocol: original_check_data.protocol + ':',
         hostname: hostname,
         method: original_check_data.method.toUpperCase(),
@@ -196,10 +199,10 @@ workers.preform_check = function(original_check_data) {
             has_outcome_sent = true;
         }
         // This is for debuging...
-        http_responseon.on('data', function (http_response_body) {
-            console.log('HTTP Response Body');
-            console.log(JSON.parse(response_body));
-        });
+        // http_response.on('data', function (http_response_body) {
+        //     console.log('HTTP Response Body');
+        //     console.log(JSON.parse(http_response_body));
+        // });
     });
 
     // Bind to the error event so it will not be thrown
@@ -240,10 +243,67 @@ workers.preform_check = function(original_check_data) {
     request.end();
 }
 
+// Process check outcome, update the check and trigger alert for the user
+// We will have speciel logic in here for accomedating a check that has never been tested before == do not alret on that one
+// e.g - initial stat was down and it changed to up - do not send anything since this is the first time we made the check
 workers.proces_check_outcome = function(original_check_data, check_outcome) {
+    var 
+        // Find out if check is up
+        is_check_up =  
+            ! check_outcome.error && 
+            check_outcome.response_code && 
+            original_check_data.successCodes.indexOf(check_outcome.response_code) > -1,
+        // Set the check accordingly
+        state = is_check_up ? 'up' : 'down'; 
+    
+    // Decide if an alert is needed
+    // We will aLert the users only if state changed (from up to down or from down to up)
+
+    var alert_warranted = original_check_data.last_checked && original_check_data.state !== state;
+
+    // Update the check data
+    var new_check_data = original_check_data;
+    new_check_data.state = state;
+    new_check_data.last_checked = Date.now();
+    _data.update('checks',new_check_data.id, new_check_data, function(err){
+
+        if ( ! err) {
+
+            // In case alert needs to be send to the user - pass the new check data to the next worker
+            if (alert_warranted) {
+
+
+                workers.alert_users_to_status_change(new_check_data);
+
+            } else {
+                console.log('Check outcome has not changed, alert is not needed');
+            }
+
+        } else {
+            console.log('Error while processing check outcome');
+        }
+    });
 
 }
 
+// Alert the users when status has chaged in one of thier checks
+workers.alert_users_to_status_change = (new_check_data) => {
+    var 
+        method         = new_check_data.method.toUpperCase(),
+        full_url       = new_check_data.protocol + '://' + new_check_data.url,
+        state          = new_check_data.state,
+        previous_state = new_check_data.state == 'up' ? 'down' : 'up',
+        message        = `Alert: your state on ${method} ${full_url} has changed from ${previous_state} to ${state}`;
+    
+    helpers.send_twilio_sms(new_check_data.user_phone, message, function(err){
+
+        if ( ! err) {
+            console.info('Sucsess: message was sent:', message);
+        } else {
+            console.log('Error: Problem with sending alert to the user');
+        }
+    });
+}
 
 // Init function - will be executed when app is initialized
  workers.init = function() {
