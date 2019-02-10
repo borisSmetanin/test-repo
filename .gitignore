@@ -1,0 +1,4 @@
+.vscode/launch.json
+app/lib/config.js
+.data/
+.logs/

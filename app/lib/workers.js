@@ -1,10 +1,10 @@
 /**
- * Workers - (bakcend tasks)
+ * Workers - (back-end tasks)
  * 
 **/
 
 /**
- * Depemdencies
+ * Dependencies
  */
 
 // Node modules
@@ -17,23 +17,53 @@ var
         
 // Custom app modules
 var 
-    _data  = require('./data'),
-    helpers = require('./helpers');
+    _data   = require('./data'),
+    helpers = require('./helpers'),
+    _logs   = require('./logs');
 
 
-// Set up the workeres container
+// Set up the workers container
  var workers = {};
 
-// Timer to execute the worker process once per minute
-workers.loop = function() {
-    // Is been executed once per minute
-    setInterval(function(){
-        workers.gather_all_checks();
-    }, 1000 * 5);
+
+ // ----------------------------------------------//
+//---- checks workers logic -----------------------//
+//-----------------------------------------------//
+
+/**
+ * Add data to a log file
+ */
+workers.log = (original_check_data, check_outcome, state, alert_warranted, time_of_check) => {
+    
+    var 
+        // Form the log data
+        log_data = {
+            check: original_check_data,
+            outcome: check_outcome,
+            state: state,
+            alert: alert_warranted,
+            time: time_of_check
+        },
+        // Convert data to a string
+        log_string = JSON.stringify(log_data),
+        // Determine the name of the log file
+        // We are going to write each check with its owen log file
+        log_file_name = original_check_data.id;
+
+        // Append the log string to the end of the log file
+
+        _logs.append(log_file_name, log_string, (err) => {
+            if ( ! err) {
+                console.log('Logging to the file succeeded');
+
+            } else {
+                console.log('Logging to the file filed');
+            }
+        });
 }
 
 /**
- * Lookup all checks, get thier data & send it to a validator
+ * Lookup all checks, get their data & send it to a validator
  */
 workers.gather_all_checks = function() {
     // Get all the checks that exists in the system
@@ -65,13 +95,13 @@ workers.gather_all_checks = function() {
 }
 
 /**
- * Sanoty check the check-data
+ * Sanity check the check-data
  */
 workers.validate_check_data = function(original_check_data) {
     // Get the url, protocol and make http/https call
     // Compare the result http code to the "successCodes" array (indexOf)
-    // if sucsess code exists - write it in a log file
-    // else conlsole log the bad result
+    // if success code exists - write it in a log file
+    // else console log the bad result
     original_check_data = 
         typeof(original_check_data) == 'object'  && original_check_data !== null 
             ? original_check_data
@@ -161,7 +191,7 @@ workers.validate_check_data = function(original_check_data) {
  */
 workers.preform_check = function(original_check_data) {
     var 
-        // Prepare ther initial check outcome
+        // Prepare their initial check outcome
         check_outcome = {
             error: false,
             response_code: false
@@ -195,7 +225,7 @@ workers.preform_check = function(original_check_data) {
         var http_response_status = http_response.statusCode;
         check_outcome.response_code = http_response_status;
         if ( ! has_outcome_sent) {
-            workers.proces_check_outcome(original_check_data, check_outcome);
+            workers.process_check_outcome(original_check_data, check_outcome);
             has_outcome_sent = true;
         }
         // This is for debuging...
@@ -216,7 +246,7 @@ workers.preform_check = function(original_check_data) {
         }
             
         if ( ! has_outcome_sent) {
-            workers.proces_check_outcome(original_check_data, check_outcome);
+            workers.process_check_outcome(original_check_data, check_outcome);
             has_outcome_sent = true;
         }
     });
@@ -233,7 +263,7 @@ workers.preform_check = function(original_check_data) {
         }
             
         if ( ! has_outcome_sent) {
-            workers.proces_check_outcome(original_check_data, check_outcome);
+            workers.process_check_outcome(original_check_data, check_outcome);
             has_outcome_sent = true;
         }
     });
@@ -244,9 +274,9 @@ workers.preform_check = function(original_check_data) {
 }
 
 // Process check outcome, update the check and trigger alert for the user
-// We will have speciel logic in here for accomedating a check that has never been tested before == do not alret on that one
+// We will have special logic in here for accommodating a check that has never been tested before == do not alret on that one
 // e.g - initial stat was down and it changed to up - do not send anything since this is the first time we made the check
-workers.proces_check_outcome = function(original_check_data, check_outcome) {
+workers.process_check_outcome = function(original_check_data, check_outcome) {
     var 
         // Find out if check is up
         is_check_up =  
@@ -257,14 +287,21 @@ workers.proces_check_outcome = function(original_check_data, check_outcome) {
         state = is_check_up ? 'up' : 'down'; 
     
     // Decide if an alert is needed
-    // We will aLert the users only if state changed (from up to down or from down to up)
+    // We will alert the users only if state changed (from up to down or from down to up)
 
-    var alert_warranted = original_check_data.last_checked && original_check_data.state !== state;
+    var 
+        alert_warranted = original_check_data.last_checked && original_check_data.state !== state,
+        time_of_check   = Date.now();
+
+
+     // Log the outcome of the check
+     workers.log(original_check_data, check_outcome, state, alert_warranted, time_of_check );
 
     // Update the check data
     var new_check_data = original_check_data;
     new_check_data.state = state;
-    new_check_data.last_checked = Date.now();
+    new_check_data.last_checked = time_of_check;
+
     _data.update('checks',new_check_data.id, new_check_data, function(err){
 
         if ( ! err) {
@@ -276,7 +313,7 @@ workers.proces_check_outcome = function(original_check_data, check_outcome) {
                 var 
                     method         = new_check_data.method.toUpperCase(),
                     full_url       = new_check_data.protocol + '://' + new_check_data.url,
-                    message        = `${method} ${full_url} is ${state} as excpected`;
+                    message        = `${method} ${full_url} is ${state} as expected`;
                 // Log to console
                 console.log('Check outcome has not changed, alert is not needed');
                 console.log('Check message:', message);
@@ -289,7 +326,7 @@ workers.proces_check_outcome = function(original_check_data, check_outcome) {
 
 }
 
-// Alert the users when status has chaged in one of thier checks
+// Alert the users when status has changed in one of their checks
 workers.alert_users_to_status_change = (new_check_data) => {
     var 
         method         = new_check_data.method.toUpperCase(),
@@ -301,11 +338,75 @@ workers.alert_users_to_status_change = (new_check_data) => {
     helpers.send_twilio_sms(new_check_data.user_phone, message, function(err){
 
         if ( ! err) {
-            console.info('Sucsess: message was sent:', message);
+            console.info('Success: message was sent:', message);
         } else {
             console.log('Error: Problem with sending alert to the user');
         }
     });
+}
+
+
+// ----------------------------------------------//
+//---- Logs workers logic -----------------------//
+//-----------------------------------------------//
+
+workers.rotate_logs = () => {
+    // List all (none compressed log) files
+
+    _logs.list(false, (err, logs) => {
+        if (! err && logs && logs.length) {
+
+            logs.forEach((log_name) => {
+
+                // Compress the data to a different file
+
+                let 
+                    log_id      = log_name.replace('.log', ''),
+                    new_file_id = log_id + '-' + Date.now();
+
+                _logs.compress(log_id, new_file_id, (err) => {
+
+                    if ( ! err) {
+                        // Truncate the log ==> clean up the log from all of the data  -
+                        // - so each day this log will have fresh log data only 
+
+                        _logs.truncate(log_id, (err) => {
+                            if ( ! err) {
+                                console.info(`Success: log was compressed and truncated successfully`);
+                            } else {
+                                console.info(`Error: could not truncate the log:`, err);
+                            }
+                        });
+                    } else {
+                        console.info(`Error: could not compress the log:`, err);
+                    }
+                });
+            });
+        } else {
+            console.log(`Error: could not find any logs to rotate`);
+        }
+    });
+}
+
+
+//--------------------------------------------------------//
+//------ Initialize all workers logic -------------------//
+//------------------------------------------------------//
+
+// Timer to execute the worker process once per minute
+workers.loop = function() {
+    // Is been executed once per minute
+    setInterval(function(){
+        workers.gather_all_checks();
+    }, 1000 * 5);
+}
+
+// Timer to execute the log rotation process once per day
+workers.log_rotation_loop = function() {
+    // Is been executed once per day
+    setInterval(function(){
+        workers.rotate_logs();
+    }, 1000 * 60 * 60 * 24);
 }
 
 // Init function - will be executed when app is initialized
@@ -314,10 +415,17 @@ workers.alert_users_to_status_change = (new_check_data) => {
     // Execute all the checks as soon as the function starts up
     workers.gather_all_checks();
 
-    // Call all a loop so the checks will be executed on thier own
+    // Call all a loop so the checks will be executed on their own
     workers.loop();
+
+    // Compress all logs immediately
+    workers.rotate_logs();
+
+    // Call the compression loop so logs will be compressed later on
+    // @TODO again bad function name.. :-(
+    workers.log_rotation_loop();
 
  }
 
-// Export the workrs obj
+// Export the workers obj
  module.exports = workers;

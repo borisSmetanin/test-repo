@@ -10,11 +10,11 @@ var app = {};
 app.init = function() {
     // Start the server
     server.init();
-    // Start the workrs
+    // Start the workers
    workers.init();
 }
 
 // Start the App by executing the function
 app.init();
-// Export the App - will be usfull for testing later opn
+// Export the App - will be usefully for testing later opn
 module.exports = app;
