@@ -12,7 +12,7 @@ var config = require('./config');
 var handlers = {}
 
 // New route for /users
-// This funciton will figure out which method im useing and pass it to the correct handler
+// This function will figure out which method im using and pass it to the correct handler
 handlers.users = function (data, callback) {
     var acceptableMethods = ['post', 'get', 'put', 'delete'];
 
@@ -25,13 +25,13 @@ handlers.users = function (data, callback) {
     }
 }
 
-// Container for usrs sub-methods
+// Container for user's sub-methods
 handlers._users = {};
 
 /**
  * POST /users
  * 
- * Requierd data:
+ * Required data:
  * - firstName
  * - lastName
  * - phone
@@ -46,7 +46,7 @@ handlers._users = {};
  */
 handlers._users.post = function (data, callback) {
     
-    // Check all requierd field are filled out
+    // Check all required field are filled out
     var firstName =
         typeof(data.payload.firstName) === 'string' && data.payload.firstName.trim().length > 0
         ? data.payload.firstName.trim()
@@ -91,14 +91,14 @@ handlers._users.post = function (data, callback) {
                         tosAgreement: true,
                     };
 
-                    // Stor the user in our custome file system
+                    // Store the user in our custom file system
                     _data.create('users', phone, userObject ,function(err){
 
                         if ( ! err) {
 
-                            // No error - user was create sucssefully
+                            // No error - user was create successfully
                             callback(200, {
-                                Sucsses: 'User was created sucssefully!'
+                                Success: 'User was created successfully!'
                             });
                         } else {
 
@@ -121,13 +121,13 @@ handlers._users.post = function (data, callback) {
                 // User already exists - callback an error
 
                 callback(400, {
-                    Error: 'User already exists with thisn phone number'
+                    Error: 'User already exists with this phone number'
                 })
             }
         });
     } else {
         callback(400, {
-            Error: 'Missing requiered fields' 
+            Error: 'Missing required fields' 
         });
     }
 }
@@ -135,10 +135,10 @@ handlers._users.post = function (data, callback) {
 /**
  * GET /users
  * 
- * Requierd data:
+ * Required data:
  *  - phone
  * 
- * Optionl data: none
+ * Optional data: none
  * 
  * @TODO in my homework - i should build get_collection and get. phone number should be passed in the GET /users/<phone_number>
  *  
@@ -189,7 +189,7 @@ handlers._users.get = function (data, callback) {
 
     } else {
         callback(400, {
-            Error: 'Pleas provide a vaid phone number'
+            Error: 'Pleas provide a valid phone number'
         });
     }
 }
@@ -197,15 +197,15 @@ handlers._users.get = function (data, callback) {
 /**
  * PUT /users
  * 
- * Requierd data:
+ * Required data:
  *  - phone
  * 
- * Optionl data (at least one must be specified):
+ * Optional data (at least one must be specified):
  * - firstName
  * - lastName
  * - password
  * 
- * @TODO let only authenticated users accsess to thier own data and nobody elses data
+ * @TODO let only authenticated users access to their own data and nobody elses data
  * 
  * @param {Object} data 
  * @param {function} callback 
@@ -253,12 +253,12 @@ handlers._users.put = function (data, callback) {
             handlers._tokens.verify_token(token, phone, function(is_valid_token){
 
                 if (is_valid_token) {
-                    // Get the user - check if user exists before we updste him
+                    // Get the user - check if user exists before we update him
                     _data.read('users', phone, function(err, userData){
                         if ( ! err && userData) {
     
                             // Update the necessary fields
-                            // @TODO i shouod do this part with a loop
+                            // @TODO i should do this part with a loop
     
                             if (firstName) {
                                 userData.firstName = firstName;
@@ -276,7 +276,7 @@ handlers._users.put = function (data, callback) {
                             _data.update('users', phone, userData, function(err){
                                 if ( ! err) {
                                     callback(200, {
-                                        Sucsess: 'User was sucssefully updated'
+                                        Success: 'User was Successfully updated'
                                     });
                                 } else {
                                     console.log(err)
@@ -308,7 +308,7 @@ handlers._users.put = function (data, callback) {
 
     } else {
         callback(400, {
-            Error: 'Pleas provide a vaid phone number'
+            Error: 'Pleas provide a valid phone number'
         });
     }
 
@@ -317,7 +317,7 @@ handlers._users.put = function (data, callback) {
 /**
  * DELETE /users
  * 
- * Requierd data:
+ * Required data:
  *  - phone
  * 
  * Optional data: none
@@ -353,7 +353,7 @@ handlers._users.delete = function (data, callback) {
                         _data.delete('users', phone, function(err) {
                         if ( ! err) {
             
-                            // Delete each of the checks assoiative to the user
+                            // Delete each of the checks associative to the user
                             var user_checks = typeof(user_data.checks) == 'object' && user_data.checks instanceof Array
                                 ?  user_data.checks
                                 : [];
@@ -363,7 +363,7 @@ handlers._users.delete = function (data, callback) {
                                 var deleted_checks  = 0,
                                     deletion_errors = false;
 
-                                // Loopp throght the checks and delete them
+                                // Loop through the checks and delete them
                                 user_checks.forEach(function(check_id){
                                     _data.delete('checks', check_id, function(err) {
                                         if (err) {
@@ -418,7 +418,7 @@ handlers._users.delete = function (data, callback) {
 
     } else {
         callback(400, {
-            Error: 'Pleas provide a vaid phone number'
+            Error: 'Pleas provide a valid phone number'
         });
     }
 }
@@ -428,7 +428,7 @@ handlers._users.delete = function (data, callback) {
 var _tokens = {};
 
 // New handlers for tokens
-// Handels all requests comming to /users
+// Handel's all requests coming to /users
 handlers.tokens = function (data, callback) {
     var acceptableMethods = ['post', 'get', 'put', 'delete'];
 
@@ -445,11 +445,11 @@ handlers._tokens = {};
 /**
  * POST /tokens
  * 
- * Requiered data:
+ * Required data:
  * - phone
  * - password
  * 
- * Optionsl data: none
+ * Optional data: none
  * 
  * @param data {object}
  * @param callback {function}
@@ -472,11 +472,11 @@ handlers._tokens.post = function(data, callback) {
             _data.read('users', phone, function(error, userData){
                 if ( ! error){
 
-                    // Hash the sent password and copmpare it to the existing password of the stored users
+                    // Hash the sent password and compare it to the existing password of the stored users
                     if (userData.hashedPassword && helpers.hash(password) == userData.hashedPassword) {
 
                         // Creat ne token with random name.
-                        // Set experation date one hour in the future
+                        // Set exportation date one hour in the future
 
                         var 
                             token_id = helpers.create_random_string(20),
@@ -524,17 +524,17 @@ handlers._tokens.post = function(data, callback) {
 /**
  * GET /tokens
  * 
- * Requiered data:
+ * Required data:
  * - id
  * 
- * Optionsl data: none
+ * Optional data: none
  * 
  */
 handlers._tokens.get = function(data, callback) {
     // Check token id is valid
     var token_id = 
     typeof data.queryStringObject.id == 'string' && 
-    // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+    // TODO this is bad practice: 20 should be kept as an constant so i can reuse it
     data.queryStringObject.id.trim().length === 20
         ? data.queryStringObject.id.trim()
         : false;
@@ -565,11 +565,11 @@ handlers._tokens.get = function(data, callback) {
 /**
  * PUT /tokens
  * 
- * Requiered data:
+ * Required data:
  * - id
  * - extend
  * 
- *  Optionsl data: none
+ *  Optional data: none
  */
 handlers._tokens.put = function(data, callback) {
     
@@ -578,12 +578,12 @@ handlers._tokens.put = function(data, callback) {
      // Check token id is valid
      var token_id = 
         typeof data.payload.id == 'string' && 
-        // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+        // TODO this is bad practice: 20 should be kept as an constant so i can reuse it
         data.payload.id.trim().length === 20
             ? data.payload.id.trim()
             : false;
 
-    // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+    // TODO this is bad practice: 20 should be kept as an constant so i can reuse it
     var extend = 
         typeof data.payload.extend == 'boolean' && 
         data.payload.extend
@@ -633,14 +633,14 @@ handlers._tokens.put = function(data, callback) {
     }
            
 
-    // extend the token for anothger 1 hour
-    // TODO feels like extend= true is redundent
+    // extend the token for another 1 hour
+    // TODO feels like extend= true is redundant
 }
 
 /**
  * DELETE /tokens
  * 
- * Requiered data:
+ * Required data:
  * - id
  * 
  */
@@ -648,7 +648,7 @@ handlers._tokens.delete = function(data, callback) {
      // Check token id is valid
      var token_id = 
         typeof data.payload.id == 'string' && 
-        // TODO this is bad practice: 20 should be kept as an constant so i can reus it
+        // TODO this is bad practice: 20 should be kept as an constant so i can reuse it
         data.payload.id.trim().length === 20
             ? data.payload.id.trim()
             : false;
@@ -660,7 +660,7 @@ handlers._tokens.delete = function(data, callback) {
                 _data.delete('tokens', token_id, function(err){
                     if ( ! err) {
                         callback(200, {
-                            Sucsess: "token was sucsessfully deleted"
+                            Success: "token was Successfully deleted"
                         })
                     } else {
                         callback(500, {
@@ -719,7 +719,7 @@ handlers._checks = {};
 
 
 // New handlers for tokens
-// Handels all requests comming to /checks
+// Handel's all requests coming to /checks
 handlers.checks = function (data, callback) {
     var acceptableMethods = [ 'post', 'get', 'put', 'delete' ];
 
@@ -738,7 +738,7 @@ handlers.checks = function (data, callback) {
  * 
  *  POST /checks
  * 
- * Requiered data:
+ * Required data:
  * - protocol
  * - url
  * - method
@@ -798,7 +798,7 @@ handlers._checks.post = function(data, callback) {
 
                     if ( ! err && user_data) {
 
-                        // Get existing users chekcs
+                        // Get existing users checks
                         var user_checks = typeof(user_data.checks) == 'object' && user_data.checks instanceof Array
                             ?  user_data.checks
                             : [];
@@ -809,7 +809,7 @@ handlers._checks.post = function(data, callback) {
                             // Create a random id for the check
                             var check_id = helpers.create_random_string(20);
 
-                            // Creat the check opbject and include the users phone
+                            // Creat the check object and include the users phone
                             var check_object = {
                                 id : check_id,
                                 user_phone: user_phone,
@@ -833,8 +833,8 @@ handlers._checks.post = function(data, callback) {
                                     _data.update('users', user_phone, user_data, function(err){
                                         if ( ! err) {
                                             callback(200, {
-                                                Sucsses: 'Check was created sucssesfully',
-                                                sucsses_payload: check_object
+                                                Success: 'Check was created successfully',
+                                                success_payload: check_object
                                             });
                                         } else {
                                             callback(500, {
@@ -857,7 +857,7 @@ handlers._checks.post = function(data, callback) {
                             // });
                         } else {
                             callback(404, {
-                                Error: 'You have suprpassed the max allowed checks: ' + config.maxChecks
+                                Error: 'You have surpassed the max allowed checks: ' + config.maxChecks
                             });
                         }
 
@@ -872,14 +872,14 @@ handlers._checks.post = function(data, callback) {
             } else {
 
                 callback(403, {
-                    Error: 'Not authorised token was provided'
+                    Error: 'Not authorized token was provided'
                 });
             }
         });
 
     } else {
         callback(400, {
-            Error: 'Failed to validate check creation - missing requierd inpouts or inpouts are invalid'
+            Error: 'Failed to validate check creation - missing required inputs or inputs are invalid'
         });
     }
 
@@ -887,7 +887,7 @@ handlers._checks.post = function(data, callback) {
 
 /**
  * GET /checks
- * Requierd data
+ * Required data
  * - id
  * 
  * Optional data: none
@@ -930,14 +930,14 @@ handlers._checks.get = function(data, callback) {
         });
     } else {
         callback(400, {
-            Error: 'Pleas provide a vaid check id'
+            Error: 'Pleas provide a valid check id'
         });
     }
 }
 
 /**
  * PUT /checks
- * Requiered data:
+ * Required data:
  * - id
  * 
  * Optional data:
@@ -987,7 +987,7 @@ handlers._checks.put = function(data, callback) {
     // Validate id
     if (id) {
 
-        // Validate requierd fields were provided
+        // Validate required fields were provided
         if (protocol || url || method || successCodes || timeoutSeconds) {
 
             _data.read('checks', id, function(err, check_data){
@@ -1029,7 +1029,7 @@ handlers._checks.put = function(data, callback) {
                                 if ( ! err) {
 
                                     callback(200, {
-                                        Sucsses: 'Check was updated sucssefully!'
+                                        Success: 'Check was updated Successfully!'
                                     });
                                 } else {
                                     callback(500, {
@@ -1053,7 +1053,7 @@ handlers._checks.put = function(data, callback) {
             });
         } else{
             callback(400, {
-                Error: 'You did not provuide any data for check update'
+                Error: 'You did not provide any data for check update'
             });
         }
     } else {
@@ -1068,7 +1068,7 @@ handlers._checks.put = function(data, callback) {
 /**
  * DELETE /checks
  * 
- * Requiered data:
+ * Required data:
  * - id
  * 
  * Optional data: none
@@ -1103,7 +1103,7 @@ handlers._checks.delete = function(data, callback) {
 
                                     if ( ! err && user_data) {
 
-                                         // Get existing users chekcs
+                                         // Get existing users checks
                                         var user_checks = typeof(user_data.checks) == 'object' && user_data.checks instanceof Array
                                                 ?  user_data.checks
                                                 : [],
@@ -1118,7 +1118,7 @@ handlers._checks.delete = function(data, callback) {
                                             _data.update('users', user_data.phone, user_data, function(err){
                                                 if ( ! err) {
                                                     callback(200, {
-                                                        Success: 'Cehck was removed successfully!'
+                                                        Success: 'Check was removed successfully!'
 
                                                     });
                                                 } else {
@@ -1136,7 +1136,7 @@ handlers._checks.delete = function(data, callback) {
                                         }
                                     } else {
                                         callback(500, {
-                                            Error: 'Check was not removed fropm user - Could not find the user'
+                                            Error: 'Check was not removed from user - Could not find the user'
                                         }); 
                                     }
 
@@ -1163,7 +1163,7 @@ handlers._checks.delete = function(data, callback) {
 
     } else {
         callback(400, {
-            Error: 'Pleas provide a vaid check id'
+            Error: 'Pleas provide a valid check id'
         });
     }
 }

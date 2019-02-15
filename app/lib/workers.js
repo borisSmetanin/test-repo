@@ -211,7 +211,7 @@ workers.preform_check = function(original_check_data) {
         hostname: hostname,
         method: original_check_data.method.toUpperCase(),
         path: path,
-        // This key expectiing miliseconds
+        // This key expecting miliseconds
         timeout: original_check_data.timeoutSeconds * 1000
     };
 

@@ -8,7 +8,7 @@ var
     https       = require('https');
 
 
-// Module continer
+// Module container
 var helpers = {};
 
 /**

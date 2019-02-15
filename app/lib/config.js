@@ -2,7 +2,7 @@
  *  Create and export configuration variables
  */
 
- // Container for all envirenments
+ // Container for all environments
 
  var environments = {}
 
@@ -24,13 +24,13 @@ environments.production = {
 
 
 
-// Determent which one of ther env vars should be exported out - with -CMD argument
+// Determent which one of their env vars should be exported out - with -CMD argument
 
 var currentEnvironment = typeof(process.env.NODE_ENV) === 'string' 
     ? process.env.NODE_ENV.toLowerCase()
     : '';
 
-// Check if env exists in our env object -- default to stataging
+// Check if env exists in our env object -- default to stating
 
 var environmentToExport = environments.hasOwnProperty(currentEnvironment)
     ? environments[currentEnvironment]
