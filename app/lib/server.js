@@ -5,14 +5,14 @@
  */
 
 /**
- * Load depoendencies
+ * Load dependencies
  */
 
 // Servers modules
 var http = require('http');
 var https = require('https');
 
-//*** Exteranl helper modules ***/
+//*** External helper modules ***/
 
 // File system module
 var fs = require('fs');
@@ -22,6 +22,10 @@ var url = require('url');
 var StringDecoder = require('string_decoder').StringDecoder;
 // Path module
 var path = require('path');
+
+var 
+    util  = require('util'),
+    debug = util.debuglog('server');
 
 //** My own custom build modules **//
 var config = require('./config');
@@ -35,27 +39,27 @@ var helpers = require('./helpers');
 // Instantiate the server server module object (so we can export it)
 var server = {};
 
-// The server shouold respond to all requests with a string (building RESTfull API)
-// Initisalizing the HTTP server
+// The server should respond to all requests with a string (building RESTfull API)
+// Initializing the HTTP server
 server.httpServer = http.createServer(function(req, res){
    server.unifiedServer(req, res);
 });
 
 
 //*** Configure and run the HTTPS Server **//
- server.httpsServerOptipons = {
+ server.httpsServerOptions = {
     key: fs.readFileSync(path.join(__dirname, '/../https/key.pem')),
     cert: fs.readFileSync(path.join(__dirname, '/../https/cert.pem'))
 };
 
 // Config the HTTPS server
-// The HTTPS server requier key and certificat in order to work so i need to pass it to this sever
-server.httpsServer = https.createServer(server.httpsServerOptipons, function(req, res){
+// The HTTPS server require key and certificate in order to work so i need to pass it to this sever
+server.httpsServer = https.createServer(server.httpsServerOptions, function(req, res){
     server.unifiedServer(req, res);
  });
 
 
-// Handels all server logic for HTTP and HTTPS servers
+// Handles all server logic for HTTP and HTTPS servers
 server.unifiedServer = function (req,res) {
 
      // Get the URL from the request and parse it
@@ -82,13 +86,13 @@ server.unifiedServer = function (req,res) {
  
      // Each and every time data is been decoded - (each string at a time)
      // This is appending the decoded string to the buffer variable
-     // Data is been streemed one peace at a time
+     // Data is been streamed one peace at a time
      req.on('data', function(data) {
          buffer+= decoder.write(data);
      });
  
      // Event triggered after buffer is done
-     // Now we can handel the procced data
+     // Now we can handel the proceed data
      req.on('end', function() {
          // Append the rest of whats left of the decoding action to the buffer
          buffer+= decoder.end();
@@ -96,11 +100,11 @@ server.unifiedServer = function (req,res) {
          // Choose the handler where this request should go to
          // when handler is not found - use the not found handler
  
-         var chooseHnandler = typeof(server.router[trimmedPath]) !== 'undefined'
+         var chooseHandler = typeof(server.router[trimmedPath]) !== 'undefined'
              ? server.router[trimmedPath]
              : handlers.notFound;
  
-         // Construnct data obj to send to the handler
+         // Construct data obj to send to the handler
  
          var data = {
              trimmedPath: trimmedPath,
@@ -110,9 +114,9 @@ server.unifiedServer = function (req,res) {
              payload: helpers.paresJsonToObject(buffer)
          };
  
-         // route the request to handler specified in the rpouter
+         // route the request to handler specified in the router
  
-         chooseHnandler(data, function (statusCode, payload){
+         chooseHandler(data, function (statusCode, payload){
  
              // use status code that was called back by the handler or default to 200
              if (typeof(statusCode) != 'number') {
@@ -124,8 +128,8 @@ server.unifiedServer = function (req,res) {
                  payload = {};
              }
  
-             // Convert payload payload to string for the respons to the user
-             var paylaodString = JSON.stringify(payload);
+             // Convert payload payload to string for the response to the user
+             var payloadString = JSON.stringify(payload);
  
  
              // Set response code
@@ -134,22 +138,19 @@ server.unifiedServer = function (req,res) {
              // writeHead - build in response code of the server module
              res.writeHead(statusCode);
  
-             // Return the rsponse
+             // Return the response
              // Set the response that the users will see
-             res.end(paylaodString);
+             res.end(payloadString);
+
+
+             let console_color = statusCode === 200 
+                ? `\x1b[32m%s\x1b[0m` 
+                : `\x1b[31m%s\x1b[0m`; 
  
-             console.log('returned rsponse code: ',    statusCode    );
-             console.log('returned rsponse payload: ', paylaodString );
-             console.log('....');
+             debug(console_color, `returned response code: ${statusCode}`);
+             debug(console_color, `HTTP Request: ${method.toUpperCase()} /${trimmedPath}`);
+             debug('....');
          });
- 
-         // Log the requests each user has made - this is seen internally
-        // console.log('Request recived "' + method +' ' + trimmedPath + '"');
-         //console.log('queryString: ', queryString);
-         //console.log('headers: ', headers);
- 
-         // console.log('Request payload: "' + buffer + '"');
-         // console.log('....');
      });
 };
 
@@ -161,25 +162,41 @@ server.router = {
     tokens: handlers.tokens,
     checks: handlers.checks
 };
+
 /**
+ * Helper function fort displaying console messages
+ * 
+ * @param {string} http_type 
+ */
+ server.console_notifications = (http_type) => {
+
+    let port, console_color;
+
+    if (http_type === 'https') {
+        port          = config.httpsPort;
+        console_color = `\x1b[36m%s\x1b[0m`;
+    } else {
+        port          = config.httpPort;
+        console_color = `\x1b[35m%s\x1b[0m`;
+    }
+    console.log(console_color,`HTTP type: ${http_type.toUpperCase()}`);
+    console.log(console_color, `Environment ${config.envName}`);
+    console.log(console_color, `Server is listening on port ${port}`);
+    console.log('........');
+ }
+
+ /**
  * Create the init function (which will initialize the server) 
  */
-
  server.init = function() {
      // Start the server and have it listen to a specific port : 3000
-     server.httpServer.listen(config.httpPort, function(){
-        console.log('HTTP type: HTTP');
-        console.log('Environment ' + config.envName);
-        console.log('Server is listening on port ' + config.httpPort);
-        console.log('........');
+     server.httpServer.listen(config.httpPort,'127.0.0.1', function(){
+        server.console_notifications('http');
     });
 
     // Start the HTTPS server
-    server.httpsServer.listen(config.httpsPort, function(){
-        console.log('HTTP type: HTTPS')
-        console.log('Environment ' + config.envName);
-        console.log('Server is listening on port ' + config.httpsPort);
-        console.log('........');
+    server.httpsServer.listen(config.httpsPort, '127.0.0.1', function(){
+        server.console_notifications('https');
     });
  }
 

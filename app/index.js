@@ -12,9 +12,31 @@ app.init = function() {
     server.init();
     // Start the workers
    workers.init();
+   
+   // FOr debug - un-comment this
+   //app.sanity_check();
+}
+
+// Simple server to check that node is OK in my localhost
+app.sanity_check = () => {
+    let http = require('http');
+    let hostname = '127.0.0.1';
+    let port = 3000;
+
+    let server = http.createServer((req, res) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/plain');
+        res.end('Hello World\n');
+    });
+
+    server.listen(port, hostname, () => {
+        console.log(`Server running at http://${hostname}:${port}/`);
+    });
 }
 
 // Start the App by executing the function
 app.init();
+
+//app.sanity_check();
 // Export the App - will be usefully for testing later opn
 module.exports = app;

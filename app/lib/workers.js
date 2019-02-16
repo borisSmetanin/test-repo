@@ -13,7 +13,9 @@ var
     fs    = require('fs'),
     https = require('https'),
     http = require('http'),
-    url = require('url');
+    url = require('url'),
+    util = require('util'),
+    debug = util.debuglog('workers');
         
 // Custom app modules
 var 
@@ -54,10 +56,10 @@ workers.log = (original_check_data, check_outcome, state, alert_warranted, time_
 
         _logs.append(log_file_name, log_string, (err) => {
             if ( ! err) {
-                console.log('Logging to the file succeeded');
+                debug('Logging to the file succeeded');
 
             } else {
-                console.log('Logging to the file filed');
+                debug('Logging to the file filed');
             }
         });
 }
@@ -73,22 +75,22 @@ workers.gather_all_checks = function() {
 
             checks_names.forEach(function(check_name){
 
-                console.info('Executing ' + check_name)
+                debug('Executing ' + check_name)
                 _data.read('checks', check_name, function(err, original_check_data){
 
                     if ( ! err && original_check_data) {
                         // Pass the check data to the check validator
                         workers.validate_check_data(original_check_data);
                     } else {
-                        console.info('Error while trying to read ' + check + '.json');  
+                        debug('Error while trying to read ' + check + '.json');  
                     }
                 });
 
-                console.info('----------------');
+                debug('----------------');
             });
         } else {
 
-            console.info('No checks were found');
+            debug('No checks were found');
         }
 
     });
@@ -179,10 +181,10 @@ workers.validate_check_data = function(original_check_data) {
         // Validation is sucssefull - continue to the check
         workers.preform_check(original_check_data);
     } else {
-        console.info('Check data is not valid');
-        console.info('original_check_data', original_check_data);
-        console.info('original_check_data.user_phone.trim().length', original_phone.length);
-        console.info('original_check_data.user_phone', original_phone);
+        debug('Check data is not valid');
+        debug('original_check_data', original_check_data);
+        debug('original_check_data.user_phone.trim().length', original_phone.length);
+        debug('original_check_data.user_phone', original_phone);
     }
 }
 
@@ -230,15 +232,15 @@ workers.preform_check = function(original_check_data) {
         }
         // This is for debuging...
         // http_response.on('data', function (http_response_body) {
-        //     console.log('HTTP Response Body');
-        //     console.log(JSON.parse(http_response_body));
+        //     debug('HTTP Response Body');
+        //     debug(JSON.parse(http_response_body));
         // });
     });
 
     // Bind to the error event so it will not be thrown
     request.on('error', function(error){
-        console.info('Internal node request error while in workers');
-        console.info('error', error);
+        debug('Internal node request error while in workers');
+        debug('error', error);
 
         check_outcome.error = {
             error: true,
@@ -254,8 +256,8 @@ workers.preform_check = function(original_check_data) {
     // Bind to the timeout event so it will not be thrown
     // this is cause due to the "timeoutSeconds" that user wish to check so if the request exeeds this time - it will be a time out error
     request.on('timeout', function(error){
-        console.info('Internal node request timeout error while in workers');
-        console.info('error', error);
+        debug('Internal node request timeout error while in workers');
+        debug('error', error);
 
         check_outcome.error = {
             error: true,
@@ -315,12 +317,12 @@ workers.process_check_outcome = function(original_check_data, check_outcome) {
                     full_url       = new_check_data.protocol + '://' + new_check_data.url,
                     message        = `${method} ${full_url} is ${state} as expected`;
                 // Log to console
-                console.log('Check outcome has not changed, alert is not needed');
-                console.log('Check message:', message);
+                debug('Check outcome has not changed, alert is not needed');
+                debug('Check message:', message);
             }
 
         } else {
-            console.log('Error while processing check outcome');
+            debug('Error while processing check outcome');
         }
     });
 
@@ -338,9 +340,9 @@ workers.alert_users_to_status_change = (new_check_data) => {
     helpers.send_twilio_sms(new_check_data.user_phone, message, function(err){
 
         if ( ! err) {
-            console.info('Success: message was sent:', message);
+            debug('Success: message was sent:', message);
         } else {
-            console.log('Error: Problem with sending alert to the user');
+            debug('Error: Problem with sending alert to the user');
         }
     });
 }
@@ -372,18 +374,18 @@ workers.rotate_logs = () => {
 
                         _logs.truncate(log_id, (err) => {
                             if ( ! err) {
-                                console.info(`Success: log was compressed and truncated successfully`);
+                                debug(`Success: log was compressed and truncated successfully`);
                             } else {
-                                console.info(`Error: could not truncate the log:`, err);
+                                debug(`Error: could not truncate the log:`, err);
                             }
                         });
                     } else {
-                        console.info(`Error: could not compress the log:`, err);
+                        debug(`Error: could not compress the log:`, err);
                     }
                 });
             });
         } else {
-            console.log(`Error: could not find any logs to rotate`);
+            debug(`Error: could not find any logs to rotate`);
         }
     });
 }
@@ -412,6 +414,9 @@ workers.log_rotation_loop = function() {
 // Init function - will be executed when app is initialized
  workers.init = function() {
 
+    // Notify about workers init (in yellow)
+    console.log('\x1b[33m%s\x1b[0m', 'Background workers are running');
+    console.log('..............................');
     // Execute all the checks as soon as the function starts up
     workers.gather_all_checks();
 
