@@ -10,7 +10,36 @@ var config = require('./config');
 
 // Define the request handlers
 var handlers = {}
+/**
+ * HTML Handlers
+ */
+// Index handler
 
+handlers.index = (data, callback) => {
+
+    // Reject any request that isn't a GET request
+    if (data.method == 'get') {
+
+        // Read in the index template as a string
+
+        helpers.get_template('index', (err, template_str) => {
+            if ( ! err && template_str) {
+                callback(200, template_str, 'html');
+            } else {
+        
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+    
+}
+
+
+/**
+ * JSON API Handlers
+ */
 // New route for /users
 // This function will figure out which method im using and pass it to the correct handler
 handlers.users = function (data, callback) {

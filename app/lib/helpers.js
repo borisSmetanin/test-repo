@@ -5,7 +5,9 @@ var
     crypto      = require('crypto'),
     config      = require('./config'),
     querystring = require('querystring'),
-    https       = require('https');
+    https       = require('https'),
+    path        = require('path'),
+    fs          = require('fs');
 
 
 // Module container
@@ -170,6 +172,35 @@ helpers.send_twilio_sms = function(phone, message, callabck) {
         //callabck(true);
     } else {
         callabck('Given parameters where missing or invalid');
+    }
+}
+
+/**
+ * Helper function to get string content out of the template
+ */
+helpers.get_template = (template_name, callback) => {
+
+    template_name = typeof(template_name) == 'string' && template_name.length > 0 
+        ? template_name 
+        : false;
+    
+
+    if (template_name) {
+
+        let templates_dir = path.join(__dirname, '/../templates');
+
+        fs.readFile(`${templates_dir}/${template_name}.html`, 'utf8', (err, template_string) => {
+
+            if ( ! err && template_string && template_string.length > 0) {
+
+                callback(false, template_string);
+            } else {
+        
+                callback('Could not read the HTML file', err);
+            }
+        });
+    } else {
+        callback('Template name is invalid');
     }
 }
 

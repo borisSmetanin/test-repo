@@ -115,29 +115,44 @@ server.unifiedServer = function (req,res) {
          };
  
          // route the request to handler specified in the router
+         chooseHandler(data, function (statusCode, payload, content_type){
  
-         chooseHandler(data, function (statusCode, payload){
- 
+            // Determined that the content type will default to json
+            if ( typeof(content_type) != 'string') {
+                content_type = 'json';
+            }
              // use status code that was called back by the handler or default to 200
              if (typeof(statusCode) != 'number') {
                  statusCode = 200;
              }
  
-             // Use the payload called back by the handel or default to empty object
-             if (typeof(payload) != 'object') {
-                 payload = {};
-             }
- 
-             // Convert payload payload to string for the response to the user
-             var payloadString = JSON.stringify(payload);
- 
- 
+             
              // Set response code
  
-             res.setHeader('Content-Type', 'application/json');
+             // Return the response part that are content specific
+
+             // Return the response parts that are common to all content-types
+            
+             let payloadString = '';
+             if (content_type == 'json') {
+                 
+                 res.setHeader('Content-Type', 'application/json');
+                // Use the payload called back by the handel or default to empty object
+                if (typeof(payload) != 'object') {
+                    payload = {};
+                }
+
+                // Convert payload payload to string for the response to the user
+                payloadString = JSON.stringify(payload);
+             }
+
+             if (content_type =='html') {
+                res.setHeader('Content-Type', 'text/html');
+                payloadString = typeof(payload) == 'string' ? payload : '';
+
+             }
              // writeHead - build in response code of the server module
              res.writeHead(statusCode);
- 
              // Return the response
              // Set the response that the users will see
              res.end(payloadString);
@@ -156,11 +171,28 @@ server.unifiedServer = function (req,res) {
 
 // Define a request router
 server.router = {
-    sample: handlers.sample,
-    ping: handlers.ping,
-    users: handlers.users,
-    tokens: handlers.tokens,
-    checks: handlers.checks
+    // home page of the web app
+    '': handlers.index,
+    // Registration route
+    'account/create':handlers.account_create,
+    // Edit user route
+    'account/edit': handlers.account_edit,
+    // Page to show after account has been deleted
+    'account/deleted': handlers.account_deleted,
+    // the login form page
+    'session/create': handlers.session_create,
+    // Logout page (after users has been logged out)
+    'session/deleted': handlers.session_deleted,
+    // Route for showing the users checks
+    'checks/all': handlers.check_list,
+    'checks/create': handlers.check_create,
+    // Page to show after check has been edited
+    'checks/edit': handlers.check_edit,
+    'sample': handlers.sample,
+    'ping': handlers.ping,
+    'api/users': handlers.users,
+    'api/tokens': handlers.tokens,
+    'api/checks': handlers.checks
 };
 
 /**
