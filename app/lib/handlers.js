@@ -20,11 +20,27 @@ handlers.index = (data, callback) => {
     // Reject any request that isn't a GET request
     if (data.method == 'get') {
 
-        // Read in the index template as a string
+        // Prepare data for interpolation
 
-        helpers.get_template('index', (err, template_str) => {
+        let template_data = {
+            'head.title': 'This is the title',
+            'head.description': 'This is the meta description',
+            'body.title': 'Hello templated world',
+            'body.class': 'index'
+        }
+
+        // Read in the index template as a string
+        helpers.get_template('index', template_data, (err, template_str) => {
             if ( ! err && template_str) {
-                callback(200, template_str, 'html');
+                helpers.add_universal_templates(template_str, template_data, (err, full_html_string) => {
+
+                    if ( ! err && full_html_string) {
+
+                        callback(200, full_html_string, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
             } else {
         
                 callback(500, undefined, 'html');

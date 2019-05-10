@@ -43,6 +43,17 @@ environmentToExport.twilio = {
     authToken: '9455e3eb3109edc12e3d8c92768f7a67'
 };
 
+environmentToExport.template_globals = {
+    app_name: 'UptimeChecker',
+    company_name: 'NotRealComp, inc',
+    year_created: '2018',
+    base_url: environmentToExport.envName == 'production'
+     ? 'http://localhost:5000'
+     : 'http://localhost:3000'
+}
+
+
+
 // Export the env module
 
 module.exports = environmentToExport;
