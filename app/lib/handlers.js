@@ -51,8 +51,8 @@ handlers.index = (data, callback) => {
     
 }
 
-// Create an Account
-handlers.account_create = (data, callback) => {
+// Create a session page
+handlers.session_create = (data, callback) => {
     // Reject any request that isn't a GET request
     if (data.method == 'get') {
 
@@ -86,8 +86,8 @@ handlers.account_create = (data, callback) => {
     }
 }
 
-// Create a session page
-handlers.session_create = (data, callback) => {
+// Create an Account
+handlers.account_create = (data, callback) => {
      // Reject any request that isn't a GET request
      if (data.method == 'get') {
 
@@ -100,7 +100,7 @@ handlers.session_create = (data, callback) => {
         }
 
         // Read in the index template as a string
-        helpers.get_template('se', template_data, (err, template_str) => {
+        helpers.get_template('account_create', template_data, (err, template_str) => {
             if ( ! err && template_str) {
                 helpers.add_universal_templates(template_str, template_data, (err, full_html_string) => {
 
