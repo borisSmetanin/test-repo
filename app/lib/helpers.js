@@ -276,5 +276,33 @@ helpers.interpolate = (str, data) => {
     return str;
 }
 
+
+// Get public assets
+helpers.get_static_assets = (file_name, callabck) => {
+
+    file_name = typeof(file_name) == 'string' && file_name.length > 0 
+        ? file_name 
+        : false;
+
+    if (file_name) {
+
+        let public_dir = path.join(__dirname, '/../public');
+
+        fs.readFile(`${public_dir}/${file_name}`, (err, data) => {
+
+            if ( ! err && data) {
+
+                callabck(false, data);
+            } else {
+                callabck('no file could be found');
+            }
+        });
+
+    } else {
+
+        callabck('File name is not valid');
+    }
+}
+
 // Export the module
 module.exports = helpers;

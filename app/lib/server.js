@@ -104,8 +104,13 @@ server.unifiedServer = function (req,res) {
              ? server.router[trimmedPath]
              : handlers.notFound;
  
-         // Construct data obj to send to the handler
- 
+        
+        // If the request is within the public directory -  us the public handler instead
+        if (trimmedPath.indexOf('public/') > -1) {
+            chooseHandler = handlers.public;
+           
+        }
+        // Construct data obj to send to the handler
          var data = {
              trimmedPath: trimmedPath,
              queryStringObject: queryString,
@@ -151,6 +156,37 @@ server.unifiedServer = function (req,res) {
                 payloadString = typeof(payload) == 'string' ? payload : '';
 
              }
+
+             if (content_type =='favicon') {
+                res.setHeader('Content-Type', 'image/x-icon');
+                payloadString = typeof(payload) !== 'undefined' ? payload : '';
+
+             }
+
+             if (content_type =='css') {
+                res.setHeader('Content-Type', 'text/css');
+                payloadString = typeof(payload) !== 'undefined' ? payload : '';
+
+             }
+
+             if (content_type =='png') {
+                res.setHeader('Content-Type', 'image/png');
+                payloadString = payload;
+                //payloadString = typeof(payload) !== 'undefined' ? payload : '';
+
+             }
+
+             if (content_type =='jpg') {
+                res.setHeader('Content-Type', 'image/jpeg');
+                payloadString = typeof(payload) !== 'undefined' ? payload : '';
+
+             }
+
+             if (content_type =='plain') {
+                res.setHeader('Content-Type', 'text/plain');
+                payloadString = typeof(payload) !== 'undefined' ? payload : '';
+
+             }
              // writeHead - build in response code of the server module
              res.writeHead(statusCode);
              // Return the response
@@ -188,11 +224,15 @@ server.router = {
     'checks/create': handlers.check_create,
     // Page to show after check has been edited
     'checks/edit': handlers.check_edit,
+    // API
     'sample': handlers.sample,
     'ping': handlers.ping,
     'api/users': handlers.users,
     'api/tokens': handlers.tokens,
-    'api/checks': handlers.checks
+    'api/checks': handlers.checks,
+    // Public assets
+    'favicon.ico': handlers.favicon,
+    'public': handlers.public
 };
 
 /**

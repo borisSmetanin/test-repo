@@ -53,6 +53,82 @@ handlers.index = (data, callback) => {
 }
 
 
+// Serve the Favicon.icon data
+
+handlers.favicon = (data, callback) => {
+
+    // Reject any request that isn't a GET request
+    if (data.method == 'get') {
+
+        // Read the favicon data
+
+        helpers.get_static_assets('favicon.ico', (err, data) => {
+
+            if ( ! err && data) {
+
+                callback(200, data, 'favicon');
+            } else {
+                callback(500); 
+            }
+        });
+
+    } else {
+        callback(405);
+    }
+}
+
+// Public Assets
+
+handlers.public = (data, callback) => {
+     // Reject any request that isn't a GET request
+     if (data.method == 'get') {
+
+        // Get the filename being requested
+        let trimmed_asset_name = data.trimmedPath.replace('public/','').trim();
+
+
+        if (trimmed_asset_name.length > 0) {
+
+            // Read the assets data
+            helpers.get_static_assets(trimmed_asset_name, (err, data) => {
+
+                if ( ! err && data) {
+
+                    // Determent the content type of the file by the file name (default to plain text)
+                    let content_type = 'plain';
+
+
+                    if (trimmed_asset_name.indexOf('.css') > -1) {
+                        content_type = 'css';
+                    }
+
+                    if (trimmed_asset_name.indexOf('.png') > -1) {
+                        content_type = 'png';
+                    }
+
+                    if (trimmed_asset_name.indexOf('.jpg') > -1) {
+                        content_type = 'jpg';
+                    }
+
+                    if (trimmed_asset_name.indexOf('.ico') > -1) {
+                        content_type = 'favicon';
+                    }
+
+                    callback(200, data, content_type);
+                } else {
+                    callback(404);
+                }
+            });
+
+        } else {
+            callback(404);
+        }
+     } else {
+        callback(405);
+     }
+}
+
+
 /**
  * JSON API Handlers
  */
