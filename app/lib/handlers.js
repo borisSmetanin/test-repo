@@ -190,6 +190,41 @@ handlers.account_edit = (data, callback) => {
     }
 }
 
+// Account has been deleted page
+handlers.account_deleted = (data, callback) => {
+
+    if (data.method == 'get') {
+
+        // Prepare data for interpolation
+
+        let template_data = {
+            'head.title': 'Account Deleted',
+            'head.description': `Your account has been deleted`,
+            'body.class': 'accountDeleted'
+        }
+
+        // Read in the index template as a string
+        helpers.get_template('account_deleted', template_data, (err, template_str) => {
+            if ( ! err && template_str) {
+                helpers.add_universal_templates(template_str, template_data, (err, full_html_string) => {
+
+                    if ( ! err && full_html_string) {
+
+                        callback(200, full_html_string, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
+            } else {
+        
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+}
+
 
 // Serve the Favicon.icon data
 handlers.favicon = (data, callback) => {
@@ -589,7 +624,7 @@ handlers._users.delete = function (data, callback) {
 
     var phone = 
     typeof data.queryStringObject.phone == 'string' && 
-    data.queryStringObject.phone.trim().length === 10
+    data.queryStringObject.phone.trim().length === 12
         ? data.queryStringObject.phone.trim()
         : false;
 
