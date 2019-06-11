@@ -25,29 +25,30 @@
         <img src="public/logo.png" alt="Logo of the website">
         </a>
 
-        <!-- Navigation menu -->
+        <!-- Navigation -->
         <ul class="menu">
             <li>
-                <a href="/">Home</a>
+              <a href="/">Home</a>
             </li>
-            <li>
-                <a href="/account/create" class="logged_out">Signup</a>
+            <li class="loggedOut">
+              <a href="/account/create">Signup</a>
             </li>
-            <li>
-                <a href="/session/create" class="logged_in">Login</a>
+            <li class="loggedOut">
+              <a href="/session/create">Login</a>
             </li>
-            <li>
-                <a href="/checks/all" class="logged_in">Dashboard</a>
+            <li class="loggedIn">
+              <a href="/checks/all">Dashboard</a>
             </li>
-            <li>
-                <a href="/account/edit" class="logged_in">Account Settings</a>
+            <li class="loggedIn">
+              <a href="/account/edit">Account Settings</a>
             </li>
-            <li>
-                <a href="#" class="logged_in">Logout</a>
+            <li class="loggedIn">
+              <a href="#" id="logoutButton">Logout</a>
             </li>
-        </ul>
-
-    </div>
-
-    <!-- Page specific content -->
-    <div class="content">
+          </ul>
+  
+          <div class="clear"></div>
+        </div>
+  
+        <!-- Page-Specific Content -->
+        <div class="content">

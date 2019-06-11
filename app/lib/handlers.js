@@ -121,6 +121,41 @@ handlers.account_create = (data, callback) => {
     }
 }
 
+// Delete a session page
+handlers.session_deleted = (data, callback) => {
+    // Reject any request that isn't a GET request
+    if (data.method == 'get') {
+
+        // Prepare data for interpolation
+
+        let template_data = {
+            'head.title': 'logged Out' ,
+            'head.description': `You have been logged out of your account`,
+            'body.class': 'sessionDeleted'
+        }
+
+        // Read in the index template as a string
+        helpers.get_template('session_deleted', template_data, (err, template_str) => {
+            if ( ! err && template_str) {
+                helpers.add_universal_templates(template_str, template_data, (err, full_html_string) => {
+
+                    if ( ! err && full_html_string) {
+
+                        callback(200, full_html_string, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
+            } else {
+        
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+}
+
 
 // Serve the Favicon.icon data
 handlers.favicon = (data, callback) => {
