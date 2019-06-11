@@ -293,6 +293,40 @@ handlers.check_list = (data, callback) => {
     }
 }
 
+// Edit a check
+handlers.check_edit = (data, callback) => {
+
+    if (data.method == 'get') {
+
+        // Prepare data for interpolation
+
+        let template_data = {
+            'head.title': 'Edit a Check',
+            'body.class': 'checksEdit'
+        }
+
+        // Read in the index template as a string
+        helpers.get_template('check_edit', template_data, (err, template_str) => {
+            if ( ! err && template_str) {
+                helpers.add_universal_templates(template_str, template_data, (err, full_html_string) => {
+
+                    if ( ! err && full_html_string) {
+
+                        callback(200, full_html_string, 'html');
+                    } else {
+                        callback(500, undefined, 'html');
+                    }
+                });
+            } else {
+        
+                callback(500, undefined, 'html');
+            }
+        });
+    } else {
+        callback(405, undefined, 'html');
+    }
+}
+
 
 // Serve the Favicon.icon data
 handlers.favicon = (data, callback) => {
