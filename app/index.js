@@ -1,6 +1,7 @@
 // Set dependencies (worker & server files)
 var server = require('./lib/server');
 var workers = require('./lib/workers');
+var cli = require('./lib/cli');
 
 // Declare the app
 var app = {};
@@ -15,6 +16,13 @@ app.init = function() {
    
    // FOr debug - un-comment this
    //app.sanity_check();
+
+   // Starting the CLI - this should be done last after all other console outputs
+
+   setTimeout(() => {
+
+    cli.init();
+   }, 50);
 }
 
 // Simple server to check that node is OK in my localhost
