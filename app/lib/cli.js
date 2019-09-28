@@ -18,6 +18,88 @@ const e = new _events();
 
 const cli = {};
 
+
+//=== Input Handlers - will be bind to events (CLI Events) =============================/
+
+e.on('man', (str) => {
+    cli.responders.help();
+})
+e.on('help', (str) => {
+    cli.responders.help();
+}) 
+
+e.on('exit', (str) => {
+    cli.responders.exit();
+})
+e.on('stats', (str) => {
+    cli.responders.stats();
+})
+e.on('list users', (str) => {
+    cli.responders.list_users();
+})
+e.on('more user info', (str) => {
+    cli.responders.more_user_info(str);
+})
+e.on('list checks', (str) => {
+    cli.responders.list_checks(str);
+})
+e.on('more check info', (str) => {
+    cli.responders.more_check_info(str);
+})
+e.on('list logs', (str) => {
+    cli.responders.list_logs();
+})
+e.on('more log info', (str) => {
+    cli.responders.more_log_info(str);
+})
+
+//=== Responders Objects (event handlers) ==============================================/
+cli.responders = {};
+
+// help / man
+cli.responders.help = () => {
+    console.log('You asked for help'); 
+}
+
+// Exit
+cli.responders.exit = () => {
+    console.log('You asked for exit'); 
+}
+// Stats
+cli.responders.stats = () => {
+    console.log('You asked for stats'); 
+}
+
+// Lis Users
+cli.responders.list_users = () => {
+    console.log('You asked for list users'); 
+}
+
+// More user info
+cli.responders.more_user_info = (str) => {
+    console.log('You asked for more user info', str); 
+}
+
+// List checks
+cli.responders.list_checks = (str) => {
+    console.log('You asked for list checks', str); 
+}
+
+// More checks info
+cli.responders.more_check_info = (str) => {
+    console.log('You asked for more check info', str); 
+}
+// List logs
+cli.responders.list_logs = () => {
+    console.log('You asked for list logs'); 
+}
+
+// More log info
+cli.responders.more_log_info = (str) => {
+    console.log('You asked for more log info', str); 
+}
+
+
 // Process user's input
 cli.process_input = (str) => {
 
