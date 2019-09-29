@@ -243,8 +243,26 @@ cli.responders.list_users = () => {
 }
 
 // More user info
-cli.responders.more_user_info = (str) => {
-    console.log('You asked for more user info', str); 
+cli.responders.more_user_info = (string) => {
+    // Get the ID from the string that was provided
+    const arr     = string.split('--');
+    const user_id = typeof arr[1] === 'string' && arr[1].trim().length > 0 
+        ?  arr[1].trim()
+        : false;
+
+    if (user_id) {
+    
+        _data.read('users', user_id, (err, user_data) => {
+
+            if ( ! err && user_data) {
+               // Removed the hashed password
+                delete user_data.hashedPassword;
+                cli.vertical_space();
+                console.dir(user_data, {colors: true});
+                cli.vertical_space();
+            }
+        });
+    }
 }
 
 // List checks
