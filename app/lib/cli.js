@@ -16,6 +16,8 @@ const os = require('os');
 // Module for communicating with the V8 engine
 const v8 = require('v8');
 
+const _data = require('./data');
+
 // This is the recommended way of working with the events class- best is to extended it
 class _events extends events {};
 
@@ -205,7 +207,39 @@ cli.responders.stats = () => {
 
 // Lis Users
 cli.responders.list_users = () => {
-    console.log('You asked for list users'); 
+ 
+    _data.list('users', (err, user_ids) => {
+
+        if ( ! err && user_ids && user_ids.length > 0) {
+            // Create a header for the stats
+            cli.vertical_space();
+            user_ids.forEach(user_id => {
+                _data.read('users', user_id, (err, user_data) => {
+
+                    if ( ! err && user_data) {
+
+                        let line               = `Name: ${user_data.firstName} ${user_data.lastName} || Phone: ${user_data.phone} || Checks: `;
+                        const number_of_checks = 
+                            typeof user_data.checks === 'object' && 
+                            user_data.checks instanceof Array && 
+                            user_data.checks.length > 0 
+                                ? user_data.checks.length
+                                : 0;
+                        
+                        line+=number_of_checks;
+
+                        console.log(line);
+
+                        cli.vertical_space();
+                        
+                    }
+                });
+            });
+        } else {
+            console.log('err', err);
+        }
+    });
+    
 }
 
 // More user info
