@@ -10,6 +10,12 @@ const util     = require('util');
 const debug    = util.debuglog('cli');
 const events = require('events');
 
+// Module for handling the operation system 
+const os = require('os');
+
+// Module for communicating with the V8 engine
+const v8 = require('v8');
+
 // This is the recommended way of working with the events class- best is to extended it
 class _events extends events {};
 
@@ -156,7 +162,45 @@ cli.responders.exit = () => {
 }
 // Stats
 cli.responders.stats = () => {
-    console.log('You asked for stats'); 
+    // Compile an object of stats
+    const v8_heap_statistics = v8.getHeapStatistics();
+    const stats = {
+        'Load Average' : os.loadavg().join(' '),
+        // It will tel us how many CPU are in the system
+        'CPU count': os.cpus().length,
+        'Free Memory': os.freemem(),
+        'Current Malloced Memory' : v8_heap_statistics.malloced_memory,
+        'Peak Malloced Memory' : v8_heap_statistics.peak_malloced_memory,
+        'Allocated Heap Used (%)' : Math.round( (v8_heap_statistics.used_heap_size / v8_heap_statistics.total_heap_size) * 100),
+        'Available Heap Allocated (%)': Math.round( (v8_heap_statistics.total_heap_size / v8_heap_statistics.heap_size_limit) * 100),
+        'Uptime': `${os.uptime()} Seconds`
+    }
+
+    // Create a header for the stats
+    cli.horizontal_line();
+    cli.centered('SYSTEM STATISTICS');
+    cli.horizontal_line();
+    cli.vertical_space(2);
+
+
+    for (const key in stats) {
+        if (stats.hasOwnProperty(key)) {
+            const value = stats[key];
+            let line = `\x1b[33m${key}\x1b[0m`;
+            const padding = 60 - line.length;
+
+            for (let i = 0; i < padding; i++) {
+                line+=' ';
+            }
+
+            line += value;
+            console.log(line);
+            cli.vertical_space();  
+        }
+    }
+
+    cli.vertical_space();
+    cli.horizontal_line();
 }
 
 // Lis Users
