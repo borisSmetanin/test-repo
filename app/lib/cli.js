@@ -58,7 +58,96 @@ cli.responders = {};
 
 // help / man
 cli.responders.help = () => {
-    console.log('You asked for help'); 
+
+    const commands = {
+        'exit': 'Kill the CLI (and the rest of the application)',
+        'man': 'Show this help page',
+        'help': 'Alias of the man command',
+        'stats': 'Get statistics on the underlying operating system and resource utilization',
+        'list users': 'Show a list of all the registered (undeleted) users in the system',
+        'more user info --{userId}': 'Show details of a specific user',
+        'list checks --up --down': 'show a list of all the active checks in the system including their state. The "--up" and the "--down" flags are both optional',
+        'more check info --{checkId}': 'Show details of a specific check',
+        'list logs': 'Show a list of all the log files available in the system to be read (compressed and un-compressed)',
+        'more log info --{filename}': 'Show details of specified log files'
+    };
+
+    // Show a header for the help that is as wide as the screen
+    cli.horizontal_line();
+    cli.centered('CLI MANUAL');
+    cli.horizontal_line();
+    cli.vertical_space(2);
+
+    // Show each command with its explanation followed by white and yellow respectively
+
+    for (const key in commands) {
+        if (commands.hasOwnProperty(key)) {
+            const value = commands[key];
+            let line = `\x1b[33m${key}\x1b[0m`;
+            const padding = 60 - line.length;
+
+            for (let i = 0; i < padding; i++) {
+                line+=' ';
+            }
+
+            line += value;
+            console.log(line);
+            cli.vertical_space();  
+        }
+    }
+
+    cli.vertical_space();
+    cli.horizontal_line();
+
+
+}
+cli.horizontal_line = () => {
+
+    // Get the available screen size
+    const width = process.stdout.columns
+    let line    = '';
+
+    for (let i = 0; i< width; i++) {
+        line+='-';
+    }
+
+    console.log(line);
+}
+
+cli.centered = (string) => {
+
+    string = typeof string === 'string' && string.trim().length > 0
+        ? string.trim()
+        : '';
+
+    // Get the available screen size
+    const width = process.stdout.columns
+
+    // Calculate the left padding
+
+    const left_padding = Math.floor((width - string.length) / 2);
+
+    // put in left padding spaces before the string itself
+    let line = '';
+
+    for (let i = 0; i < left_padding; i++) {
+        line+=' ';
+    }
+    line+=string;
+
+    console.log(line);
+}
+
+cli.vertical_space = (lines) => {
+    lines = typeof lines === 'number' && lines > 0
+        ? lines 
+        : 1;
+
+    for (let i = 0; i< lines; i++) {
+       console.log(''); 
+    }
+
+    
 }
 
 // Exit
