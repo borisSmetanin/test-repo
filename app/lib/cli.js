@@ -267,7 +267,53 @@ cli.responders.more_user_info = (string) => {
 
 // List checks
 cli.responders.list_checks = (str) => {
-    console.log('You asked for list checks', str); 
+    _data.list('checks', (err, check_ids) => {
+        if ( ! err && check_ids && check_ids.length > 0) {
+            cli.vertical_space();
+            check_ids.forEach((check_id) => {
+
+                _data.read('checks', check_id, (err, check_data) => {
+
+                    const include_check = false;
+                    const lower_string  = str.toLowerCase();
+                    // Get the state of thr check but default to down
+                    const state = typeof check_data.state === 'string' 
+                        ? check_data.state 
+                        : 'down';
+                    
+                    // Get the state, default to unknown
+                    const state_or_unknown = typeof check_data.state === 'string' 
+                        ? check_data.state 
+                        : 'unknown';
+                    // If the user specified the state, or hasn't specified any state, include the current check accordingly
+                    if (
+                        // User specifically asked for --up / --down
+                        lower_string.includes(`--${state}`) || 
+                        // User did not asked fore anything specific, e.g did not used any flag at all
+                        (
+                            ! lower_string.includes(`--down`) 
+                            && 
+                            ! lower_string.includes(`--up`)
+                        )
+                    ) {
+
+                        let line = `ID: ${check_data.id} ${check_data.method.toUpperCase()}  ${check_data.protocol}://${check_data.url} State: ${state_or_unknown}`;
+
+                        console.log(line);
+                        cli.vertical_space();
+                    }
+                    
+
+
+
+
+
+                });
+            });
+        }
+    });
+   const arr = str.split('--');
+   const check_type = typeof arr[1] === 'string' && arr[1].trim().toLowerCase() === 'down' ? 'down' : 'up';
 }
 
 // More checks info
