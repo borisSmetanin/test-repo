@@ -162,9 +162,9 @@ lib.compress = (log_id, new_file_id, callback) => {
  */
 lib.de_compress = (file_id, callback) => {
     
-    fs.readFile(lib.base_dir + file_id + '.gz.b64', 'utf8', (err, str) => {
+    fs.readFile(lib.base_dir + file_id + '.gz.bs64', 'utf8', (err, str) => {
 
-        if ( ! err && string) {
+        if ( ! err && str) {
             // Decompress the data and return it in the callback
             let input_buffer = Buffer.from(str, 'base64');
             zlib.unzip(input_buffer, (err, output_buffer) => {
@@ -183,7 +183,7 @@ lib.de_compress = (file_id, callback) => {
         } else {
             callback('Decompress: can not open a file log file ', {
                 err: err,
-                string: string
+                string: str
             });
         }
     });

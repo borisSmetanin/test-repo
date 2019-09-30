@@ -18,6 +18,7 @@ const v8 = require('v8');
 
 const _data = require('./data');
 const _logs = require('./logs');
+const helpers = require('./helpers');
 
 // This is the recommended way of working with the events class- best is to extended it
 class _events extends events {};
@@ -355,11 +356,37 @@ cli.responders.list_logs = () => {
 
 // More log info
 cli.responders.more_log_info = (str) => {
-    console.log('You asked for more log info', str); 
+   // Get Log file name
+   const arr     = str.split('--');
+   const log_file_name = typeof arr[1] === 'string' && arr[1].trim().length > 0 
+       ?  arr[1].trim()
+       : false;
+
+   if (log_file_name) {
+       
+        cli.vertical_space();
+
+        _logs.de_compress(log_file_name, (err, str_data) => {
+
+            if ( ! err && str_data) {
+
+                const json_strings_arr = str_data.split('\n');
+
+                json_strings_arr.forEach((json_string) => {
+                    const log_object = helpers.paresJsonToObject(json_string);
+
+                    if (log_object && Object.values(log_object).length > 0) {
+                        console.dir(log_object, {colors: true});
+                        cli.vertical_space();
+                    }
+                });
+            }
+        });
+   }
 }
 
 
-// Process user's input
+// Process user's input - get the requested function string and trigger the correct event
 cli.process_input = (str) => {
 
     // Sanitize the input string
@@ -387,13 +414,16 @@ cli.process_input = (str) => {
         let match_found = false;
         let counter     = 0;
 
+        // Loop on the unique inputs (should be named events)
         unique_inputs.some((input) => {
-            if (str.toLowerCase().indexOf(input) > -1) {
+
+            // Event was found
+            if (str.toLowerCase().includes(input)) {
 
                 match_found = true;
 
                 // emit an event matching the unique input, and include the full string given by the user
-                // This will trigger the event?
+                // === This will trigger the event ===
                 e.emit(input, str);
                 return true;
             }
@@ -412,7 +442,7 @@ cli.init = () => {
     // Send start message to the console. in dark blue
     console.log(`\x1b[34m%s\x1b[0m`,`The CLI is running`);
 
-    // Start the interface
+    // Create the CLI interface
     const _interface = readline.createInterface({
         // This will tell Node that the input should come from the console / CLI users is using
         // stdin is "standard input"
@@ -423,14 +453,13 @@ cli.init = () => {
         prompt: '>'
     });
 
-    // Create an initial promp
+    // Create an initial CLI promp - this will start the CLI interface
     _interface.prompt();
 
-    // handel each line of input separately
-
+    // On each line enter - execute the  process_input which will trigger the correct event
     _interface.on('line', (str) => {
 
-        // Send the input line to the input processor
+        // Send the input line to the input processor (will trigger the event inside that function)
         cli.process_input(str);
         // Re-Initialize the prompt afterwards
         _interface.prompt();
