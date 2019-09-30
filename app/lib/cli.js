@@ -290,6 +290,7 @@ cli.responders.list_checks = (str) => {
                         // User specifically asked for --up / --down
                         lower_string.includes(`--${state}`) || 
                         // User did not asked fore anything specific, e.g did not used any flag at all
+                        // TODO this condition can be simplified by just checking for the command
                         (
                             ! lower_string.includes(`--down`) 
                             && 
@@ -302,12 +303,6 @@ cli.responders.list_checks = (str) => {
                         console.log(line);
                         cli.vertical_space();
                     }
-                    
-
-
-
-
-
                 });
             });
         }
@@ -317,8 +312,24 @@ cli.responders.list_checks = (str) => {
 }
 
 // More checks info
-cli.responders.more_check_info = (str) => {
-    console.log('You asked for more check info', str); 
+cli.responders.more_check_info = (string) => {
+   // Get the ID from the string that was provided
+   const arr     = string.split('--');
+   const check_id = typeof arr[1] === 'string' && arr[1].trim().length > 0 
+       ?  arr[1].trim()
+       : false;
+
+   if (check_id) {
+   
+       _data.read('checks', check_id, (err, check_data) => {
+
+           if ( ! err && check_data) {
+               cli.vertical_space();
+               console.dir(check_data, {colors: true});
+               cli.vertical_space();
+           }
+       });
+   }
 }
 // List logs
 cli.responders.list_logs = () => {
