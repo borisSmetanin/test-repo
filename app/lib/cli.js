@@ -17,6 +17,7 @@ const os = require('os');
 const v8 = require('v8');
 
 const _data = require('./data');
+const _logs = require('./logs');
 
 // This is the recommended way of working with the events class- best is to extended it
 class _events extends events {};
@@ -76,7 +77,7 @@ cli.responders.help = () => {
         'more user info --{userId}': 'Show details of a specific user',
         'list checks --up --down': 'show a list of all the active checks in the system including their state. The "--up" and the "--down" flags are both optional',
         'more check info --{checkId}': 'Show details of a specific check',
-        'list logs': 'Show a list of all the log files available in the system to be read (compressed and un-compressed)',
+        'list logs': 'Show a list of all the log files available in the system to be read (compressed only)',
         'more log info --{filename}': 'Show details of specified log files'
     };
 
@@ -333,7 +334,23 @@ cli.responders.more_check_info = (string) => {
 }
 // List logs
 cli.responders.list_logs = () => {
-    console.log('You asked for list logs'); 
+    
+    _logs.list(true, (err, log_file_names) => {
+
+        if ( ! err && log_file_names && log_file_names.length> 0) {
+
+            cli.vertical_space();
+
+            log_file_names.forEach((log_file_name) => {
+
+                if (log_file_name.includes('-')) {
+                   console.log(log_file_name);
+                   cli.vertical_space();
+                }
+            });
+        }
+    });
+
 }
 
 // More log info

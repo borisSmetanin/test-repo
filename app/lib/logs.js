@@ -70,14 +70,14 @@ lib.list = (include_compressed_logs, callback) => {
             data.forEach((file_name) => {
                 // Add the log files
 
-                if (file_name.indexOf('.log') >-1) {
+                if (file_name.includes('.log')) {
                     
                     trimmed_file_names.push(file_name.replace('.log', ''));
                 }
 
                 // Add the .gz (compressed file)
-                if (include_compressed_logs  && file_name.indexOf('.gz.b64')) {
-                    trimmed_file_names.push(file_name.replace('.gz.b64', ''));
+                if (include_compressed_logs  && file_name.includes('.gz.bs64')) {
+                    trimmed_file_names.push(file_name.replace('.gz.bs64', ''));
                 }
             });
 
