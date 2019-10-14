@@ -12,7 +12,8 @@ app.init = function() {
     // Start the server
     server.init();
     // Start the workers
-   workers.init();
+    // TODO -- dont want to start this since it creates a lot of unneeded logs
+   // workers.init();
    
    // FOr debug - un-comment this
    //app.sanity_check();

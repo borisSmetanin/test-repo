@@ -406,6 +406,15 @@ handlers.public = (data, callback) => {
 /**
  * JSON API Handlers
  */
+
+ // Example handlers
+handlers.example_error = (data, callback) => {
+    const err = new Error('This is an example error');
+
+    throw(err);
+}
+
+
 // New route for /users
 // This function will figure out which method im using and pass it to the correct handler
 handlers.users = function (data, callback) {
