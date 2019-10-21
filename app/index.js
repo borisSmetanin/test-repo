@@ -8,7 +8,7 @@ var app = {};
 
 // Set up the initialization function
 // This function will initialize the server and workers
-app.init = function() {
+app.init = (callback) => {
     // Start the server
     server.init();
     // Start the workers
@@ -23,6 +23,10 @@ app.init = function() {
    setTimeout(() => {
 
     cli.init();
+
+    if (typeof callback === 'function') {
+        callback();
+    }
    }, 50);
 }
 
@@ -43,8 +47,11 @@ app.sanity_check = () => {
     });
 }
 
-// Start the App by executing the function
-app.init();
+// Self invoking only required directly
+
+if (require.main === 'module') {
+    app.init();
+}
 
 //app.sanity_check();
 // Export the App - will be usefully for testing later opn

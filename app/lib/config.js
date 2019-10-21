@@ -14,6 +14,14 @@
     hashingSecret: 'thisIsASecret',
  };
 
+  // Testing env
+  environments.staging = {
+    httpPort: 4000,
+    httpsPort: 4001,
+    envName: 'testing',
+    hashingSecret: 'thisIsASecret',
+ };
+
 // Production env
 environments.production = {
     httpPort: 5000,
