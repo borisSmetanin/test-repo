@@ -13,6 +13,11 @@ var
 // Module container
 var helpers = {};
 
+// Sample for the testing that simply returns a number
+helpers.get_a_number = () => {
+    return 1;
+}
+
 /**
  * Hash the passowrd
  * 
