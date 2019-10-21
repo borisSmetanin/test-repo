@@ -2,68 +2,17 @@
  * Test Runner
  */
 
-// Dependencies
-
-const helpers = require('./../lib/helpers');
-
-// Library to write functions that asset that one thing should be equal to another thing
-const assert = require('assert');
-
 // Application logic for the test runner
 
 const _app = {};
 
-_app.tests = {
-    unit: {}
-}
+_app.tests = {};
 
-/**
- * Assert that a get_a_number function returns a number
- * @param done {function} || callback function
- */
-_app.tests.unit['helpers.get_a_number should return a number'] = (done) => {
-
-    // Invoke the helpers.get_a_number function
-    const val = helpers.get_a_number();
-
-    // Assert (test) that val is 1
-    assert.equal(typeof(val), 'number');
-
-    done();
-}
+// Add on the unit tests
+_app.tests.unit = require('./unit');
 
 
-/**
- * Assert that a get_a_number function returns 1
- * @param done {function} || callback function
- */
-_app.tests.unit['helpers.get_a_number should return 1'] = (done) => {
 
-    // Invoke the helpers.get_a_number function
-    const val = helpers.get_a_number();
-
-    // Assert (test) that val is 1
-    assert.equal(val, 1);
-
-    done();
-}
-
-
-/**
- * Assert that a get_a_number function returns 2 (will fail)
- * @param done {function} || callback function
- */
-_app.tests.unit['helpers.get_a_number should return 2'] = (done) => {
-
-    // Invoke the helpers.get_a_number function
-    const val = helpers.get_a_number();
-
-    // Assert (test) that val is 1
-    // FYI - If assertion will not evaluated to true - it will throw an error
-    assert.equal(val, 2);
-
-    done();
-}
 
 /**
  * Counts all the tests
@@ -133,7 +82,7 @@ _app.run_tests = () => {
                 } catch (e) {
                     // If it throws - then it failed, so capture the error thrown and log it in red
                     errors.push({
-                        name: test_name,
+                        name: temp_test_name,
                         error: e
                     });
 
