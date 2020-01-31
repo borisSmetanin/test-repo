@@ -11,6 +11,10 @@ var config = require('./config');
 const _url = require('url');
 const dns  = require('dns');
 
+const _performance = require('perf_hooks').performance;
+const util = require('util');
+const debug = util.debuglog('performance');
+
 // Define the request handlers
 var handlers = {}
 /**
@@ -863,6 +867,7 @@ handlers._tokens = {};
  */
 handlers._tokens.post = function(data, callback) {
 
+    _performance.mark('entered function');
     var phone =
         typeof(data.payload.phone) === 'string' && data.payload.phone.trim().length === 12
         ? data.payload.phone.trim()
@@ -873,58 +878,87 @@ handlers._tokens.post = function(data, callback) {
         ? data.payload.password.trim()
         : false;
 
-        if (phone && password) {
+     _performance.mark('inputs validated');
+    
+    if (phone && password) {
 
-            // Lookup the user who matches the phone number
-            _data.read('users', phone, function(error, userData){
-                if ( ! error){
+        _performance.mark('beginning user lookup');
+        // Lookup the user who matches the phone number
+        _data.read('users', phone, function(error, userData){
+            _performance.mark('user lookup complete');
+            if ( ! error){
 
-                    // Hash the sent password and compare it to the existing password of the stored users
-                    if (userData.hashedPassword && helpers.hash(password) == userData.hashedPassword) {
+                _performance.mark('beginning password hashing');
+                const hashed_password = helpers.hash(password);
+                _performance.mark('password hashing complete');
+                // Hash the sent password and compare it to the existing password of the stored users
+                if (userData.hashedPassword && hashed_password == userData.hashedPassword) {
 
-                        // Creat ne token with random name.
-                        // Set exportation date one hour in the future
+                    // Creat ne token with random name.
+                    // Set exportation date one hour in the future
 
-                        var 
-                            token_id = helpers.create_random_string(20),
-                            expires = Date.now() + (1000 * 60 * 60),
-                            token_object = {
-                               phone: phone,
-                               id: token_id,
-                               expires: expires
-                            };
+                    _performance.mark('creating data for the token');
+                    var 
+                        token_id = helpers.create_random_string(20),
+                        expires = Date.now() + (1000 * 60 * 60),
+                        token_object = {
+                            phone: phone,
+                            id: token_id,
+                            expires: expires
+                        };
 
 
-                        _data.create('tokens', token_id, token_object, function(error){
-                            if ( ! error) {
+                    _performance.mark('beginning storing token');
+                    _data.create('tokens', token_id, token_object, function(error){
 
-                                callback(200,token_object);
-                            } else {
-                                callback(500, {
-                                    Error: 'Could not creat a token'
-                                })
-                            }
+                        _performance.mark('storing token complete');
+                    
+                        // Gather all the measurements
+                        _performance.measure('Beginning to end','entered function', 'storing token complete' );
+                        _performance.measure('Validating user input', 'entered function', 'inputs validated' );
+                        _performance.measure('User Lookup', 'beginning user lookup', 'user lookup complete' );
+                        _performance.measure('Password hashing', 'beginning password hashing', 'password hashing complete' );
+                        _performance.measure('Token data creation', 'creating data for the token', 'beginning storing token' );
+                        _performance.measure('Token storing', 'beginning storing token', 'storing token complete' );
 
+                        // Log out all the measurements
+                        const measurements = _performance.getEntriesByType('measure');
+
+                        measurements.forEach((measurement) => {
+                            debug('\x1b[33m%s\x1b[0m',`${measurement.name}: ${measurement.duration}`);
                         });
 
-                    } else {
-                        callback(404, {
-                            Error: 'Can not creat token - password do not match'
-                        });  
-                    }
+                        debug('\x1b[33m%s\x1b[0m',`================`);
+
+                        if ( ! error) {
+
+                            callback(200,token_object);
+                        } else {
+                            callback(500, {
+                                Error: 'Could not creat a token'
+                            })
+                        }
+
+                    });
 
                 } else {
                     callback(404, {
-                        Error: 'User was not found'
-                    });
+                        Error: 'Can not creat token - password do not match'
+                    });  
                 }
-            });
 
-        } else {
-            callback(400, {
-                Error: 'Must provide phone number and password for creating a token'
-            });
-        }
+            } else {
+                callback(404, {
+                    Error: 'User was not found'
+                });
+            }
+        });
+
+    } else {
+        callback(400, {
+            Error: 'Must provide phone number and password for creating a token'
+        });
+    }
 
 }
 
