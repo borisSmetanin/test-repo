@@ -3,6 +3,8 @@ var server = require('./lib/server');
 var workers = require('./lib/workers');
 var cli = require('./lib/cli');
 
+var helpers = require('./lib/helpers');
+
 // Declare the app
 var app = {};
 
@@ -13,7 +15,7 @@ app.init = (callback) => {
     server.init();
     // Start the workers
     // TODO -- dont want to start this since it creates a lot of unneeded logs
-   // workers.init();
+     workers.init();
    
    // FOr debug - un-comment this
    //app.sanity_check();
@@ -48,11 +50,10 @@ app.sanity_check = () => {
 }
 
 // Self invoking only required directly
-
-if (require.main === 'module') {
-    app.init();
+if (require.main === module) {
+    // console.log('password', helpers.hash('ilovelinux'));
+    app.init(function(){});
 }
-
 //app.sanity_check();
 // Export the App - will be usefully for testing later opn
 module.exports = app;

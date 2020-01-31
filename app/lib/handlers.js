@@ -8,6 +8,9 @@
  var helpers = require('./helpers');
 var config = require('./config');
 
+const _url = require('url');
+const dns  = require('dns');
+
 // Define the request handlers
 var handlers = {}
 /**
@@ -1209,56 +1212,69 @@ handlers._checks.post = function(data, callback) {
 
                         // Validate that user has less then the max allowed number of checks per user
                         if (user_checks.length < config.maxChecks) {
+                            // Verify that the URL given has DNS entries and there for can resolved
+                            const parsed_url = _url.parse(`${protocol}://${url}`, true);
+                            const host_name  = typeof(parsed_url.hostname) === 'string' && parsed_url.hostname.length > 0 
+                                ? parsed_url.hostname
+                                : false;
 
-                            // Create a random id for the check
-                            var check_id = helpers.create_random_string(20);
+                            dns.resolve(host_name, (err, records) => {
 
-                            // Creat the check object and include the users phone
-                            var check_object = {
-                                id : check_id,
-                                user_phone: user_phone,
-                                protocol: protocol,
-                                url: url,
-                                method: method,
-                                successCodes: successCodes,
-                                timeoutSeconds: timeoutSeconds
-                            }
+                                if ( !err && records) {
 
-                            // Save the check object in the checks collection
-                            _data.create('checks', check_id, check_object, function(err){
+                                    var check_id = helpers.create_random_string(20);
+                                    // TODO in here
+                                    // Creat the check object and include the users phone
+                                    var check_object = {
+                                        id : check_id,
+                                        user_phone: user_phone,
+                                        protocol: protocol,
+                                        url: url,
+                                        method: method,
+                                        successCodes: successCodes,
+                                        timeoutSeconds: timeoutSeconds
+                                    }
 
-                                if ( ! err) {
+                                    // Save the check object in the checks collection
+                                    _data.create('checks', check_id, check_object, function(err){
 
-                                    // Add the check id to the user's data
-                                    user_checks.push(check_id);
-                                    user_data.checks = user_checks;
-
-                                    // Update the user
-                                    _data.update('users', user_phone, user_data, function(err){
                                         if ( ! err) {
-                                            callback(200, {
-                                                Success: 'Check was created successfully',
-                                                success_payload: check_object
+
+                                            // Add the check id to the user's data
+                                            user_checks.push(check_id);
+                                            user_data.checks = user_checks;
+
+                                            // Update the user
+                                            _data.update('users', user_phone, user_data, function(err){
+                                                if ( ! err) {
+                                                    callback(200, {
+                                                        Success: 'Check was created successfully',
+                                                        success_payload: check_object
+                                                    });
+                                                } else {
+                                                    callback(500, {
+                                                        Error: 'Could not update the user with the new check'
+                                                    });
+                                                }
                                             });
+
                                         } else {
                                             callback(500, {
-                                                Error: 'Could not update the user with the new check'
+                                                Error: 'Error while creating the check object'
                                             });
                                         }
                                     });
-                                    
-
                                 } else {
 
-                                    callback(500, {
-                                        Error: 'Error while creating the check object'
-                                    });
+                                    console.log('error', err);
+                                    console.log('records', records);
+                                    callback(
+                                        400, {
+                                            Error: 'the hostname of the URL you have entered did not resolved to any DNS entries'
+                                        });
                                 }
                             });
-
-                            // user_checks.push({
-
-                            // });
+                            
                         } else {
                             callback(404, {
                                 Error: 'You have surpassed the max allowed checks: ' + config.maxChecks
