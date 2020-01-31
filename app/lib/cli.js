@@ -19,6 +19,7 @@ const v8 = require('v8');
 const _data = require('./data');
 const _logs = require('./logs');
 const helpers = require('./helpers');
+const child_proses = require('child_process');
 
 // This is the recommended way of working with the events class- best is to extended it
 class _events extends events {};
@@ -336,20 +337,25 @@ cli.responders.more_check_info = (string) => {
 // List logs
 cli.responders.list_logs = () => {
     
-    _logs.list(true, (err, log_file_names) => {
+    const ls = child_proses.spawn('ls', ['./.logs/']);
 
-        if ( ! err && log_file_names && log_file_names.length> 0) {
+    ls.stdout.on('data', (data_object) => {
+        // Explode into separated lines
+        const data_string    = data_object.toString();
+        const log_file_names = data_string.split('\n');
 
-            cli.vertical_space();
+        cli.vertical_space();
+        log_file_names.forEach((log_file_name) => {
 
-            log_file_names.forEach((log_file_name) => {
-
-                if (log_file_name.includes('-')) {
-                   console.log(log_file_name);
-                   cli.vertical_space();
-                }
-            });
-        }
+            if (
+                typeof(log_file_name) === 'string' &&
+                log_file_name.length > 0 && 
+                log_file_name.includes('-') 
+                ) {
+                console.log(log_file_name.trim().split('.')[0]);
+                cli.vertical_space();
+            }
+        });
     });
 
 }
