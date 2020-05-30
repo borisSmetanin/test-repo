@@ -49,7 +49,7 @@ app.sanity_check = () => {
 
 // Self invoking only required directly
 
-if (require.main === 'module') {
+if (require.main === module) {
     app.init();
 }
 

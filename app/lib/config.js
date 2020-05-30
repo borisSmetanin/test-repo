@@ -15,7 +15,7 @@
  };
 
   // Testing env
-  environments.staging = {
+  environments.testing = {
     httpPort: 4000,
     httpsPort: 4001,
     envName: 'testing',
